@@ -1,0 +1,44 @@
+# 🐹 Project Hamster
+
+鼠鼠競賽模擬遊戲。玩家扮演教練:配牌、判讀環境（賽道×天氣×風向×時段）、設定技能自動施放條件，讓鼠鼠自動跑完比賽，再從文字戰報分析輸贏。
+
+> **現況:MVP 開發中（Stage 1 完成）。** 目標是先用純文字、確定性模擬驗證「配牌×環境判讀×戰報分析」好不好玩，之後才做養成/劇情/美術/主機版。
+> 完整規劃見 Sandbox `works/active/TASK-002-project-hamster.md`。
+
+## 技術
+
+- **C# / .NET 10**（選 C# 是為了日後引擎能零重寫搬進 Unity 上 PC/Switch）
+- 架構:核心與表現分離、規則資料化（JSON）、確定性模擬（同 seed 同結果）
+
+## 專案結構
+
+```
+src/
+  HamsterRace.Domain/       型別:Hamster、RaceConfig、RaceResult、確定性亂數
+  HamsterRace.Simulation/   引擎:RaceSimulator(tick)、TextReport、DataLoader
+  HamsterRace.Console/      CLI 進入點
+tests/
+  HamsterRace.Simulation.Tests/   確定性與完賽測試
+data/
+  hamsters.json             4 隻原型鼠數值(data-driven)
+```
+
+## 跑跑看
+
+```bash
+# 跑一場 100m,seed 42
+dotnet run --project src/HamsterRace.Console -- 42 100
+
+# 測試
+dotnet test
+```
+
+## 開發階段（Stage）
+
+- ✅ **Stage 0** 地基:資料模型＋確定性亂數
+- ✅ **Stage 1** 純模擬核心:tick 引擎、基礎跑速、名次＋文字戰報
+- ⬜ **Stage 2** 卡牌與資源（HP/MP）
+- ⬜ **Stage 3** 環境系統（賽道/天氣/風向/時段、預報→鎖牌抽實際）
+- ⬜ **Stage 4** 技能系統（自動觸發、親密度、熟練度、滿親密突破）
+- ⬜ **Stage 5** 戰報與平衡驗證（批次 10,000 場勝率統計）
+- ⬜ **Stage 6** 簡易 CLI 操作介面

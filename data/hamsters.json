@@ -1,0 +1,41 @@
+{
+  "_comment": "Stage 1 四隻原型鼠 A/B/C/D 的可玩草案數值。基礎跑速接近、用波動與(日後)技能拉開差異，先確保沒有全環境最強。數值都可調，卡凡看手感後再平衡。",
+  "hamsters": [
+    {
+      "id": "puff",
+      "name": "泡芙",
+      "baseSpeed": 5.0,
+      "speedJitter": 0.35,
+      "maxHp": 100,
+      "maxMp": 100,
+      "_style": "均衡型：速度中庸、波動小，穩定跑者"
+    },
+    {
+      "id": "mochi",
+      "name": "麻糬",
+      "baseSpeed": 4.7,
+      "speedJitter": 0.75,
+      "maxHp": 120,
+      "maxMp": 80,
+      "_style": "爆發型：均速略低但波動大，會有神來一筆也會凸槌"
+    },
+    {
+      "id": "brownie",
+      "name": "黑糖",
+      "baseSpeed": 5.15,
+      "speedJitter": 0.2,
+      "maxHp": 90,
+      "maxMp": 90,
+      "_style": "領跑型：均速最高、最穩，但體力(HP)較低，長程會露餡"
+    },
+    {
+      "id": "peanut",
+      "name": "花生",
+      "baseSpeed": 4.9,
+      "speedJitter": 0.5,
+      "maxHp": 110,
+      "maxMp": 110,
+      "_style": "全能型：各項中上、資源多，靠技能與補給打後段"
+    }
+  ]
+}
