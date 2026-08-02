@@ -15,7 +15,7 @@ public sealed class RaceSimulator
     private sealed class ActiveEffect
     {
         public double SpeedBonus { get; init; }
-        public double StaminaSavePerSec { get; init; }
+        public double DrainMultiplier { get; init; } = 1.0;
         public double EndTime { get; init; }      // 到此時間（秒）失效
         public bool WholeRace { get; init; }
     }
@@ -82,12 +82,8 @@ public sealed class RaceSimulator
                 // 2) 移除過期效果
                 r.Active.RemoveAll(e => !e.WholeRace && t >= e.EndTime);
 
-                // 3) 體力自然消耗（扣掉保留體力卡的節省）
-                double staminaSave = r.Active.Sum(e => e.StaminaSavePerSec);
-                double drain = Math.Max(0, r.Hamster.StaminaDrainPerSec - staminaSave);
-                r.Hp = Math.Max(0, r.Hp - drain * config.TickSeconds);
-
-                // 4) 算速度:( 基礎 + 卡加成 + 波動 ) × 資源折扣
+                // 3) 算速度:( 基礎 + 卡加成 + 波動 ) × 資源折扣
+                //    用「本 tick 起始的 HP/MP 狀態」決定速度,再依跑出的距離扣消耗。
                 double cardBonus = r.Active.Sum(e => e.SpeedBonus);
                 double jitter = r.Hamster.SpeedJitter > 0
                     ? r.Rng.NextRange(-r.Hamster.SpeedJitter, r.Hamster.SpeedJitter) : 0.0;
@@ -95,11 +91,22 @@ public sealed class RaceSimulator
                 double speed = (r.Hamster.BaseSpeed + cardBonus + jitter) * resourceMult;
                 if (speed < 0) speed = 0;
 
-                // 5) 前進
-                r.Distance += speed * config.TickSeconds;
+                // 4) 前進
+                double distThisTick = speed * config.TickSeconds;
+                r.Distance += distThisTick;
                 r.SpeedSum += speed;
                 r.Ticks++;
                 if (speed > r.MaxSpeed) r.MaxSpeed = speed;
+
+                // 5) 基本體力/精神消耗:依「跑出的距離」× 疲勞曲線 × 鼠鼠係數 × 卡牌節省
+                //    每 10m 基本扣 HpDrainPer10m/MpDrainPer10m;疲勞隨進度 0.5→1.5 遞增（後段更耗）。
+                double fatigue = config.Rules.FatigueStartMult +
+                    (config.Rules.FatigueEndMult - config.Rules.FatigueStartMult) * Math.Min(1.0, progress);
+                double drainMult = 1.0;
+                foreach (var e in r.Active) drainMult *= e.DrainMultiplier;
+                double units = (distThisTick / 10.0) * fatigue * r.Hamster.StaminaFactor * drainMult;
+                r.Hp = Math.Max(0, r.Hp - units * config.Rules.HpDrainPer10m);
+                r.Mp = Math.Max(0, r.Mp - units * config.Rules.MpDrainPer10m);
 
                 if (r.Distance >= config.DistanceMeters)
                 {
@@ -187,22 +194,26 @@ public sealed class RaceSimulator
             r.Mp -= card.MpCost;
             if (card.HpRecover > 0)
                 r.Hp = Math.Min(r.Hamster.MaxHp, r.Hp + card.HpRecover);
+            if (card.MpRecover > 0)
+                r.Mp = Math.Min(r.Hamster.MaxMp, r.Mp + card.MpRecover);
             r.CardsFired++;
 
-            if (card.SpeedBonus != 0 || card.StaminaSavePerSec != 0)
+            if (card.SpeedBonus != 0 || card.DrainMultiplier != 1.0)
             {
                 r.Active.Add(new ActiveEffect
                 {
                     SpeedBonus = card.SpeedBonus,
-                    StaminaSavePerSec = card.StaminaSavePerSec,
+                    DrainMultiplier = card.DrainMultiplier,
                     EndTime = t + card.DurationSeconds,
                     WholeRace = card.WholeRace,
                 });
             }
 
-            string detail = card.HpRecover > 0
-                ? $"回復 HP {card.HpRecover}"
-                : $"+{card.SpeedBonus:0.0} m/s";
+            string detail = card.HpRecover > 0 || card.MpRecover > 0
+                ? $"回復 HP {card.HpRecover}／MP {card.MpRecover}"
+                : card.DrainMultiplier != 1.0
+                    ? $"消耗×{card.DrainMultiplier:0.0}"
+                    : $"+{card.SpeedBonus:0.0} m/s";
             events.Add(new RaceEvent(t, r.Hamster.Id,
                 $"{r.Hamster.Name} 打出「{card.Name}」（{detail}）。"));
         }

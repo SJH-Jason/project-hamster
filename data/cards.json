@@ -1,12 +1,12 @@
 {
-  "_comment": "Stage 2 卡牌型錄。階段:start(0-15%)/early(0-40%)/mid(40-70%)/sprint(70-100%)/whole(全程)。speedBonus=m/s 加成,hpCost/mpCost=消耗,hpRecover=補給,staminaSavePerSec=保留體力。數值都可調。",
+  "_comment": "Stage 2 卡牌型錄。階段:start(0-15%)/early(0-40%)/mid(40-70%)/sprint(70-100%)/whole(全程)。speedBonus=m/s,hpCost/mpCost=消耗,hpRecover/mpRecover=補給,drainMultiplier=保留體力(降低該段基本消耗)。數值都可調。",
   "cards": [
     { "id": "start_dash",  "name": "起跑加速", "phase": "start",  "speedBonus": 2.0, "durationSeconds": 2.0, "hpCost": 8 },
     { "id": "steady_pace", "name": "穩健配速", "phase": "whole",  "speedBonus": 0.3, "wholeRace": true },
     { "id": "early_surge", "name": "初期突進", "phase": "early",  "speedBonus": 1.2, "durationSeconds": 2.5, "hpCost": 10 },
-    { "id": "conserve",    "name": "保留體力", "phase": "early",  "staminaSavePerSec": 2.0, "durationSeconds": 6.0, "mpCost": 5 },
+    { "id": "conserve",    "name": "保留體力", "phase": "early",  "drainMultiplier": 0.4, "durationSeconds": 6.0, "mpCost": 5 },
     { "id": "mid_boost",   "name": "中段加速", "phase": "mid",    "speedBonus": 1.5, "durationSeconds": 3.0, "hpCost": 12 },
-    { "id": "nut_supply",  "name": "堅果補給", "phase": "mid",    "hpRecover": 25, "mpCost": 6 },
+    { "id": "nut_supply",  "name": "堅果補給", "phase": "mid",    "hpRecover": 25, "mpRecover": 15, "mpCost": 0 },
     { "id": "final_sprint","name": "最後衝刺", "phase": "sprint", "speedBonus": 2.5, "durationSeconds": 2.5, "hpCost": 20, "mpCost": 10 },
     { "id": "late_kick",   "name": "末段加速", "phase": "sprint", "speedBonus": 1.5, "durationSeconds": 2.0, "hpCost": 10 }
   ]

@@ -37,6 +37,12 @@ public sealed record Card
     /// <summary>觸發時回復的 HP（補給卡）。</summary>
     public int HpRecover { get; init; } = 0;
 
-    /// <summary>每秒體力節省（保留體力卡:觸發後降低該段 stamina 消耗）。</summary>
-    public double StaminaSavePerSec { get; init; } = 0.0;
+    /// <summary>觸發時回復的 MP。</summary>
+    public int MpRecover { get; init; } = 0;
+
+    /// <summary>
+    /// 消耗倍率（保留體力卡:持續時間內降低 HP/MP 基本消耗）。
+    /// 1.0=不變;0.4=消耗砍到四成。多張同時生效取相乘。
+    /// </summary>
+    public double DrainMultiplier { get; init; } = 1.0;
 }

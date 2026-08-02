@@ -1,15 +1,17 @@
 using HamsterRace.Domain;
 using HamsterRace.Simulation;
 
-// Stage 1 CLI:跑一場 100m、4 隻鼠的比賽,印出文字戰報。
-//   用法:  dotnet run --project src/HamsterRace.Console -- [seed] [distance]
+// CLI:跑一場比賽,印出文字戰報。
+//   用法:  dotnet run --project src/HamsterRace.Console -- [seed] [distance] [hamstersFile]
 //   例:    dotnet run --project src/HamsterRace.Console -- 42 100
+//          dotnet run --project src/HamsterRace.Console -- 42 100 hamsters_brownie_conserve.json
 
 ulong seed = args.Length > 0 && ulong.TryParse(args[0], out var s) ? s : 42UL;
 double distance = args.Length > 1 && double.TryParse(args[1], out var d) ? d : 100.0;
+string hamstersFile = args.Length > 2 ? args[2] : "hamsters.json";
 
 // 找 data/*.json(從執行檔往上找專案根)
-var hamsters = DataLoader.LoadHamsters(FindDataFile("hamsters.json"));
+var hamsters = DataLoader.LoadHamsters(FindDataFile(hamstersFile));
 var cards = DataLoader.LoadCards(FindDataFile("cards.json"));
 
 var config = new RaceConfig

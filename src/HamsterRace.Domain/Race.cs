@@ -6,6 +6,16 @@ public sealed record RaceRules
     /// <summary>低於「上限×此比例」視為「資源不足」→ 速度打 75 折。</summary>
     public double LowResourceFraction { get; init; } = 0.30;
 
+    // --- 基本體力/精神消耗（每跑一段距離扣,與時間無關）---
+    /// <summary>每 10 公尺的基本 HP 消耗。</summary>
+    public double HpDrainPer10m { get; init; } = 5.0;
+    /// <summary>每 10 公尺的基本 MP 消耗。</summary>
+    public double MpDrainPer10m { get; init; } = 5.0;
+    /// <summary>疲勞曲線:比賽起點的消耗倍率（前期消耗少）。</summary>
+    public double FatigueStartMult { get; init; } = 0.5;
+    /// <summary>疲勞曲線:比賽終點的消耗倍率（後段消耗多）。平均≈1 → 維持 5/10m 基準。</summary>
+    public double FatigueEndMult { get; init; } = 1.5;
+
     // 階段界線（跑完進度比例）
     public double StartPhaseEnd { get; init; } = 0.15;
     public double EarlyPhaseEnd { get; init; } = 0.40;

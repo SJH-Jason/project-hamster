@@ -22,8 +22,12 @@ public sealed record Hamster
     public int MaxHp { get; init; } = 100;
     public int MaxMp { get; init; } = 100;
 
-    /// <summary>每秒自然體力消耗（跑步的基礎負荷）。低 HP＋高消耗 = 後段容易衰減。</summary>
-    public double StaminaDrainPerSec { get; init; } = 0.0;
+    /// <summary>
+    /// 體力/精神消耗係數（乘在「每 10 公尺基本消耗」上）。
+    /// 1.0 = 標準;&gt;1 較耗（如黑糖）;&lt;1 較省（如花生）。
+    /// 鼠鼠的體力差異＝此係數 × HP/MP 上限,長跑時差距被放大。
+    /// </summary>
+    public double StaminaFactor { get; init; } = 1.0;
 
     /// <summary>這隻鼠帶的牌組（card id）。Stage 2 每隻 6 張;Stage 6 才做選牌 UI。</summary>
     public IReadOnlyList<string> Deck { get; init; } = new List<string>();

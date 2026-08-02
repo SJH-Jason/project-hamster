@@ -23,7 +23,7 @@ public static class DataLoader
         public double SpeedJitter { get; set; }
         public int MaxHp { get; set; } = 100;
         public int MaxMp { get; set; } = 100;
-        public double StaminaDrainPerSec { get; set; }
+        public double StaminaFactor { get; set; } = 1.0;
         public List<string> Deck { get; set; } = new();
     }
 
@@ -40,7 +40,7 @@ public static class DataLoader
             SpeedJitter = d.SpeedJitter,
             MaxHp = d.MaxHp,
             MaxMp = d.MaxMp,
-            StaminaDrainPerSec = d.StaminaDrainPerSec,
+            StaminaFactor = d.StaminaFactor,
             Deck = d.Deck,
         }).ToList();
     }
@@ -59,7 +59,8 @@ public static class DataLoader
         public int HpCost { get; set; }
         public int MpCost { get; set; }
         public int HpRecover { get; set; }
-        public double StaminaSavePerSec { get; set; }
+        public int MpRecover { get; set; }
+        public double DrainMultiplier { get; set; } = 1.0;
     }
 
     public static IReadOnlyDictionary<string, Card> LoadCards(string path)
@@ -78,7 +79,8 @@ public static class DataLoader
             HpCost = d.HpCost,
             MpCost = d.MpCost,
             HpRecover = d.HpRecover,
-            StaminaSavePerSec = d.StaminaSavePerSec,
+            MpRecover = d.MpRecover,
+            DrainMultiplier = d.DrainMultiplier,
         });
     }
 }

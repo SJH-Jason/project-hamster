@@ -53,16 +53,22 @@ public class CardTests
     }
 
     [Fact]
-    public void StaminaDrain_ReducesRemainingHp()
+    public void BaseDrain_ConsumesHpAndMpByDistance()
     {
-        var cfg = Config(1, Array.Empty<string>()) with
-        {
-            Hamsters = new List<Hamster>
-            {
-                new() { Id = "x", Name = "X", BaseSpeed = 5.0, MaxHp = 100, StaminaDrainPerSec = 2.0, Deck = Array.Empty<string>() },
-            },
-        };
+        // 每 10m 基本扣 5HP+5MP;跑完 100m 即使不出牌,HP/MP 都該明顯下降。
+        var cfg = Config(1, Array.Empty<string>());
         var result = new RaceSimulator().Run(cfg);
         Assert.True(result.Rankings[0].RemainingHp < 100, "跑完體力應下降");
+        Assert.True(result.Rankings[0].RemainingMp < 100, "跑完精神應下降");
+    }
+
+    [Fact]
+    public void LongerRace_DrainsMoreThanShort()
+    {
+        // 長跑消耗應大於短跑（疲勞累積 + 距離更長）。
+        var shortR = new RaceSimulator().Run(Config(1, Array.Empty<string>()) with { DistanceMeters = 100 });
+        var longR = new RaceSimulator().Run(Config(1, Array.Empty<string>()) with { DistanceMeters = 300 });
+        Assert.True(longR.Rankings[0].RemainingHp < shortR.Rankings[0].RemainingHp,
+            "長跑剩餘體力應更低");
     }
 }
