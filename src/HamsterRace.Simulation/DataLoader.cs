@@ -29,6 +29,8 @@ public static class DataLoader
         public Dictionary<string, double> WeatherAffinity { get; set; } = new();
         public Dictionary<string, double> WindAffinity { get; set; } = new();
         public Dictionary<string, double> TimeAffinity { get; set; } = new();
+        public List<string> Skills { get; set; } = new();
+        public double Intimacy { get; set; } = 0.9;
     }
 
     public static IReadOnlyList<Hamster> LoadHamsters(string path)
@@ -50,6 +52,8 @@ public static class DataLoader
             WeatherAffinity = d.WeatherAffinity,
             WindAffinity = d.WindAffinity,
             TimeAffinity = d.TimeAffinity,
+            Skills = d.Skills,
+            Intimacy = d.Intimacy,
         }).ToList();
     }
 
@@ -106,6 +110,44 @@ public static class DataLoader
         public string TimeOfDay { get; set; } = "day";
         public Dictionary<string, double> WeatherForecast { get; set; } = new() { ["normal"] = 1.0 };
         public Dictionary<string, double> WindForecast { get; set; } = new() { ["none"] = 1.0 };
+    }
+
+    // ---- 技能 ----
+    private sealed class SkillFile { public List<SkillDto> Skills { get; set; } = new(); }
+
+    private sealed class SkillDto
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public SkillTrigger Trigger { get; set; }
+        public double TriggerValue { get; set; }
+        public double SpeedBonus { get; set; }
+        public double DurationSeconds { get; set; } = 2.0;
+        public double CooldownSeconds { get; set; } = 5.0;
+        public int HpCost { get; set; }
+        public int MpCost { get; set; }
+        public int HpRecover { get; set; }
+        public int MpRecover { get; set; }
+    }
+
+    public static IReadOnlyDictionary<string, Skill> LoadSkills(string path)
+    {
+        var file = JsonSerializer.Deserialize<SkillFile>(File.ReadAllText(path), Options)
+                   ?? throw new InvalidDataException($"無法解析技能資料檔:{path}");
+        return file.Skills.ToDictionary(d => d.Id, d => new Skill
+        {
+            Id = d.Id,
+            Name = d.Name,
+            Trigger = d.Trigger,
+            TriggerValue = d.TriggerValue,
+            SpeedBonus = d.SpeedBonus,
+            DurationSeconds = d.DurationSeconds,
+            CooldownSeconds = d.CooldownSeconds,
+            HpCost = d.HpCost,
+            MpCost = d.MpCost,
+            HpRecover = d.HpRecover,
+            MpRecover = d.MpRecover,
+        });
     }
 
     /// <summary>載入賽事環境;raceId 為 null 時取第一筆。</summary>

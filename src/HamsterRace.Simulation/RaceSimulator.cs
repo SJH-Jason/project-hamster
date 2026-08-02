@@ -37,6 +37,10 @@ public sealed class RaceSimulator
         public List<ActiveEffect> Active { get; } = new();
         public int CardsFired { get; set; }
         public int CardsFizzled { get; set; }
+        public Dictionary<string, double> SkillReadyAt { get; } = new(); // skillId → 下次可用時間
+        public int CurrentRank { get; set; } = 1;
+        public int SkillsFired { get; set; }
+        public int SkillsFailed { get; set; }
     }
 
     public RaceResult Run(RaceConfig config)
@@ -87,6 +91,11 @@ public sealed class RaceSimulator
         {
             t += config.TickSeconds;
 
+            // 先更新即時排名（給「排名落後」技能條件用）:依已跑距離排序。
+            int pos = 1;
+            foreach (var rr in runners.OrderByDescending(x => x.Distance))
+                rr.CurrentRank = pos++;
+
             foreach (var r in runners)
             {
                 if (r.Finished) continue;
@@ -94,8 +103,11 @@ public sealed class RaceSimulator
                 double progress = r.Distance / config.DistanceMeters;
                 RacePhase phase = PhaseOf(progress, config.Rules);
 
-                // 1) 嘗試觸發本階段還沒打過的牌
+                // 1a) 嘗試觸發本階段還沒打過的牌
                 TryFireCards(r, phase, t, config, events, env.Terrain, actualWeather, actualWind);
+
+                // 1b) 嘗試觸發技能（有冷卻、可重複、依條件自動施放）
+                TryFireSkills(r, t, config, events);
 
                 // 2) 移除過期效果
                 r.Active.RemoveAll(e => !e.WholeRace && t >= e.EndTime);
@@ -162,6 +174,8 @@ public sealed class RaceSimulator
                 RemainingMp = r.Mp,
                 CardsFired = r.CardsFired,
                 CardsFizzled = r.CardsFizzled,
+                SkillsFired = r.SkillsFired,
+                SkillsFailed = r.SkillsFailed,
             })
             .OrderBy(x => x.Rank)
             .ToList();
@@ -287,6 +301,75 @@ public sealed class RaceSimulator
             events.Add(new RaceEvent(t, r.Hamster.Id,
                 $"{r.Hamster.Name} 打出「{card.Name}」（{detail}）。"));
         }
+    }
+
+    /// <summary>
+    /// 技能自動施放（規格 §8）。與卡牌不同:有冷卻、可重複發動、觸發條件更細。
+    /// 親密度＝成功率(先固定);熟練度固定 → 效果取名目值,不做區間亂數。
+    /// </summary>
+    private static void TryFireSkills(Runner r, double t, RaceConfig config, List<RaceEvent> events)
+    {
+        foreach (var skillId in r.Hamster.Skills)
+        {
+            if (!config.Skills.TryGetValue(skillId, out var skill)) continue;
+
+            // 冷卻中?
+            if (r.SkillReadyAt.TryGetValue(skillId, out var readyAt) && t < readyAt) continue;
+
+            // 觸發條件是否成立?
+            if (!SkillTriggered(r, skill, config)) continue;
+
+            // 付得起?
+            if (r.Hp < skill.HpCost || r.Mp < skill.MpCost) continue;
+
+            // 進冷卻（不論成敗都先扣冷卻;滿親密突破「失敗不進冷卻」屬養成,先不做）
+            r.SkillReadyAt[skillId] = t + skill.CooldownSeconds;
+
+            // 親密度判定
+            bool success = r.Rng.NextDouble() < r.Hamster.Intimacy;
+            if (!success)
+            {
+                r.SkillsFailed++;
+                events.Add(new RaceEvent(t, r.Hamster.Id,
+                    $"{r.Hamster.Name} 發動技能「{skill.Name}」──親密度判定失敗,沒放出來。"));
+                continue;
+            }
+
+            // 成功:付代價、回復、上效果
+            r.Hp -= skill.HpCost;
+            r.Mp -= skill.MpCost;
+            if (skill.HpRecover > 0) r.Hp = Math.Min(r.Hamster.MaxHp, r.Hp + skill.HpRecover);
+            if (skill.MpRecover > 0) r.Mp = Math.Min(r.Hamster.MaxMp, r.Mp + skill.MpRecover);
+            r.SkillsFired++;
+
+            if (skill.SpeedBonus != 0)
+            {
+                r.Active.Add(new ActiveEffect
+                {
+                    SpeedBonus = skill.SpeedBonus,
+                    EndTime = t + skill.DurationSeconds,
+                    WholeRace = false,
+                });
+            }
+
+            string detail = skill.HpRecover > 0 || skill.MpRecover > 0
+                ? $"回復 HP {skill.HpRecover}／MP {skill.MpRecover}"
+                : $"+{skill.SpeedBonus:0.0} m/s";
+            events.Add(new RaceEvent(t, r.Hamster.Id,
+                $"{r.Hamster.Name} 發動技能「{skill.Name}」判定成功（{detail}）。"));
+        }
+    }
+
+    private static bool SkillTriggered(Runner r, Skill skill, RaceConfig config)
+    {
+        return skill.Trigger switch
+        {
+            SkillTrigger.Periodic => true, // 冷卻好就放
+            SkillTrigger.RemainingM => (config.DistanceMeters - r.Distance) <= skill.TriggerValue,
+            SkillTrigger.HpBelow => r.Hp < skill.TriggerValue * r.Hamster.MaxHp,
+            SkillTrigger.RankBehind => r.CurrentRank > 1,
+            _ => false,
+        };
     }
 
     /// <summary>

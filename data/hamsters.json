@@ -6,6 +6,7 @@
       "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "conserve", "mid_boost", "nut_supply", "final_sprint"],
       "terrainAffinity": { "grass": 1.05 },
+      "skills": ["dash_burst", "last_spurt"],
       "_style": "均衡型:草地略強,無明顯弱點"
     },
     {
@@ -13,7 +14,8 @@
       "maxHp": 120, "maxMp": 80, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"],
       "weatherAffinity": { "rain": 1.15, "sunny": 0.95 }, "terrainAffinity": { "grass": 1.05 },
-      "_style": "爆發型:雨天之鼠,晴天略弱"
+      "skills": ["dash_burst", "comeback"],
+      "_style": "爆發型:雨天之鼠,晴天略弱;逆境突進打後追"
     },
     {
       "id": "brownie", "name": "黑糖", "baseSpeed": 5.15, "speedJitter": 0.2,
@@ -22,6 +24,7 @@
       "weatherAffinity": { "sunny": 1.12, "rain": 0.85 },
       "terrainAffinity": { "asphalt": 1.1, "track": 1.05, "grass": 0.95 },
       "windAffinity": { "head": 0.9 },
+      "skills": ["dash_burst", "last_spurt"],
       "_style": "領跑型:乾爽快場(晴天/柏油)之王,但怕雨、怕逆風、體力低"
     },
     {
@@ -29,7 +32,8 @@
       "maxHp": 110, "maxMp": 110, "staminaFactor": 0.9,
       "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"],
       "windAffinity": { "head": 1.1 },
-      "_style": "全能型:逆風反利用、省耗續航,無明顯弱點"
+      "skills": ["steady_breath", "comeback"],
+      "_style": "全能型:逆風反利用、省耗續航,靠穩定呼吸回血+逆境突進打後段"
     }
   ]
 }

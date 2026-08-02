@@ -27,7 +27,8 @@ public static class TextReport
                 $"  第{r.Rank}名  {r.Name,-6}  完賽 {time}  " +
                 $"均速 {r.AverageSpeed:0.00}  最高 {r.MaxSpeed:0.00}  " +
                 $"剩HP {r.RemainingHp,3:0}／MP {r.RemainingMp,3:0}  " +
-                $"出牌 {r.CardsFired}" + (r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : ""));
+                $"出牌 {r.CardsFired}" + (r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "") +
+                $"  技{r.SkillsFired}" + (r.SkillsFailed > 0 ? $"(敗{r.SkillsFailed})" : ""));
         }
         sb.AppendLine("════════════════════════════════════");
         return sb.ToString();

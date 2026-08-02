@@ -73,6 +73,10 @@ public sealed record RaceConfig
     /// <summary>賽道環境（Stage 3）。</summary>
     public RaceEnvironment Environment { get; init; } = new();
 
+    /// <summary>技能型錄（id → Skill）。Stage 4 起用。</summary>
+    public IReadOnlyDictionary<string, Skill> Skills { get; init; }
+        = new Dictionary<string, Skill>();
+
     public RaceRules Rules { get; init; } = new();
 }
 
@@ -95,6 +99,8 @@ public sealed record HamsterResult
     public double RemainingMp { get; init; }
     public int CardsFired { get; init; }
     public int CardsFizzled { get; init; }
+    public int SkillsFired { get; init; }
+    public int SkillsFailed { get; init; }
 }
 
 /// <summary>一整場比賽的結果。</summary>

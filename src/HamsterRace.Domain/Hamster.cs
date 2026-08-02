@@ -32,6 +32,12 @@ public sealed record Hamster
     /// <summary>這隻鼠帶的牌組（card id）。Stage 2 每隻 6 張;Stage 6 才做選牌 UI。</summary>
     public IReadOnlyList<string> Deck { get; init; } = new List<string>();
 
+    /// <summary>這隻鼠的主動技能（skill id,每隻 2 個）。Stage 4。</summary>
+    public IReadOnlyList<string> Skills { get; init; } = new List<string>();
+
+    /// <summary>親密度（技能成功率,0–1）。Stage 4 先固定,不做養成。</summary>
+    public double Intimacy { get; init; } = 0.9;
+
     // --- 以下 Stage 3+ 才生效，先給預設，維持可攜 ---
 
     /// <summary>地形適性倍率，例如 { "grass": 1.1 }；查無 key 視為 1.0。</summary>
