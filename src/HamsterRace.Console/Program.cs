@@ -13,6 +13,7 @@ string hamstersFile = args.Length > 2 ? args[2] : "hamsters.json";
 // 找 data/*.json(從執行檔往上找專案根)
 var hamsters = DataLoader.LoadHamsters(FindDataFile(hamstersFile));
 var cards = DataLoader.LoadCards(FindDataFile("cards.json"));
+var environment = DataLoader.LoadEnvironment(FindDataFile("races.json"));
 
 var config = new RaceConfig
 {
@@ -21,6 +22,7 @@ var config = new RaceConfig
     DistanceMeters = distance,
     Hamsters = hamsters,
     Cards = cards,
+    Environment = environment,
 };
 
 var result = new RaceSimulator().Run(config);

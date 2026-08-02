@@ -1,49 +1,35 @@
 {
-  "_comment": "Stage 2 四隻原型鼠。staminaFactor=體力/精神消耗係數(乘在每10m基本消耗上,>1較耗<1較省);基本消耗規則在 RaceRules(每10m扣5HP+5MP,後段加重)。deck=6張牌。數值都可調。",
+  "_comment": "Stage 3 四隻原型鼠。新增適性(terrain/weather/wind/time),查無 key 視為 1.0。適性給每隻鼠環境定位:黑糖愛乾爽快場(晴天/柏油)怕雨、麻糬愛雨、花生逆風反利用且無明顯弱點。數值都可調。",
   "hamsters": [
     {
-      "id": "puff",
-      "name": "泡芙",
-      "baseSpeed": 5.0,
-      "speedJitter": 0.35,
-      "maxHp": 100,
-      "maxMp": 100,
-      "staminaFactor": 1.0,
+      "id": "puff", "name": "泡芙", "baseSpeed": 5.0, "speedJitter": 0.35,
+      "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "conserve", "mid_boost", "nut_supply", "final_sprint"],
-      "_style": "均衡型:速度中庸、波動小、消耗標準,穩定跑者"
+      "terrainAffinity": { "grass": 1.05 },
+      "_style": "均衡型:草地略強,無明顯弱點"
     },
     {
-      "id": "mochi",
-      "name": "麻糬",
-      "baseSpeed": 4.7,
-      "speedJitter": 0.75,
-      "maxHp": 120,
-      "maxMp": 80,
-      "staminaFactor": 1.0,
+      "id": "mochi", "name": "麻糬", "baseSpeed": 4.7, "speedJitter": 0.75,
+      "maxHp": 120, "maxMp": 80, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"],
-      "_style": "爆發型:均速略低但波動大、HP厚MP薄,神來一筆也會凸槌"
+      "weatherAffinity": { "rain": 1.15, "sunny": 0.95 }, "terrainAffinity": { "grass": 1.05 },
+      "_style": "爆發型:雨天之鼠,晴天略弱"
     },
     {
-      "id": "brownie",
-      "name": "黑糖",
-      "baseSpeed": 5.15,
-      "speedJitter": 0.2,
-      "maxHp": 90,
-      "maxMp": 90,
-      "staminaFactor": 1.15,
+      "id": "brownie", "name": "黑糖", "baseSpeed": 5.15, "speedJitter": 0.2,
+      "maxHp": 90, "maxMp": 90, "staminaFactor": 1.15,
       "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "late_kick", "final_sprint"],
-      "_style": "領跑型:均速最高最穩,但體力低、消耗大(1.15x),後段易露餡、長跑尤其崩"
+      "weatherAffinity": { "sunny": 1.12, "rain": 0.85 },
+      "terrainAffinity": { "asphalt": 1.1, "track": 1.05, "grass": 0.95 },
+      "windAffinity": { "head": 0.9 },
+      "_style": "領跑型:乾爽快場(晴天/柏油)之王,但怕雨、怕逆風、體力低"
     },
     {
-      "id": "peanut",
-      "name": "花生",
-      "baseSpeed": 4.9,
-      "speedJitter": 0.5,
-      "maxHp": 110,
-      "maxMp": 110,
-      "staminaFactor": 0.9,
+      "id": "peanut", "name": "花生", "baseSpeed": 4.9, "speedJitter": 0.5,
+      "maxHp": 110, "maxMp": 110, "staminaFactor": 0.9,
       "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"],
-      "_style": "全能型:各項中上、資源多又省(0.9x),長跑續航之王"
+      "windAffinity": { "head": 1.1 },
+      "_style": "全能型:逆風反利用、省耗續航,無明顯弱點"
     }
   ]
 }

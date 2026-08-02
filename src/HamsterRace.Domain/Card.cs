@@ -45,4 +45,11 @@ public sealed record Card
     /// 1.0=不變;0.4=消耗砍到四成。多張同時生效取相乘。
     /// </summary>
     public double DrainMultiplier { get; init; } = 1.0;
+
+    // --- Stage 3:環境條件卡（押天氣/地形/風向）---
+    /// <summary>觸發條件類型:null=無條件;"weather"/"wind"/"terrain"。</summary>
+    public string? ConditionType { get; init; }
+
+    /// <summary>條件值（如 "rain"）。實際環境不符 → 卡失效（押錯代價）。</summary>
+    public string? ConditionValue { get; init; }
 }

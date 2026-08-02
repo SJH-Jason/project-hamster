@@ -25,6 +25,10 @@ public static class DataLoader
         public int MaxMp { get; set; } = 100;
         public double StaminaFactor { get; set; } = 1.0;
         public List<string> Deck { get; set; } = new();
+        public Dictionary<string, double> TerrainAffinity { get; set; } = new();
+        public Dictionary<string, double> WeatherAffinity { get; set; } = new();
+        public Dictionary<string, double> WindAffinity { get; set; } = new();
+        public Dictionary<string, double> TimeAffinity { get; set; } = new();
     }
 
     public static IReadOnlyList<Hamster> LoadHamsters(string path)
@@ -42,6 +46,10 @@ public static class DataLoader
             MaxMp = d.MaxMp,
             StaminaFactor = d.StaminaFactor,
             Deck = d.Deck,
+            TerrainAffinity = d.TerrainAffinity,
+            WeatherAffinity = d.WeatherAffinity,
+            WindAffinity = d.WindAffinity,
+            TimeAffinity = d.TimeAffinity,
         }).ToList();
     }
 
@@ -61,6 +69,8 @@ public static class DataLoader
         public int HpRecover { get; set; }
         public int MpRecover { get; set; }
         public double DrainMultiplier { get; set; } = 1.0;
+        public string? ConditionType { get; set; }
+        public string? ConditionValue { get; set; }
     }
 
     public static IReadOnlyDictionary<string, Card> LoadCards(string path)
@@ -81,6 +91,38 @@ public static class DataLoader
             HpRecover = d.HpRecover,
             MpRecover = d.MpRecover,
             DrainMultiplier = d.DrainMultiplier,
+            ConditionType = d.ConditionType,
+            ConditionValue = d.ConditionValue,
         });
+    }
+
+    // ---- 賽道環境 ----
+    private sealed class RaceFile { public List<EnvDto> Races { get; set; } = new(); }
+
+    private sealed class EnvDto
+    {
+        public string Id { get; set; } = "";
+        public string Terrain { get; set; } = "track";
+        public string TimeOfDay { get; set; } = "day";
+        public Dictionary<string, double> WeatherForecast { get; set; } = new() { ["normal"] = 1.0 };
+        public Dictionary<string, double> WindForecast { get; set; } = new() { ["none"] = 1.0 };
+    }
+
+    /// <summary>載入賽事環境;raceId 為 null 時取第一筆。</summary>
+    public static RaceEnvironment LoadEnvironment(string path, string? raceId = null)
+    {
+        var file = JsonSerializer.Deserialize<RaceFile>(File.ReadAllText(path), Options)
+                   ?? throw new InvalidDataException($"無法解析賽事資料檔:{path}");
+        var dto = (raceId is null ? file.Races.FirstOrDefault()
+                                  : file.Races.FirstOrDefault(r => r.Id == raceId))
+                  ?? throw new InvalidDataException($"賽事找不到:{raceId}");
+
+        return new RaceEnvironment
+        {
+            Terrain = dto.Terrain,
+            TimeOfDay = dto.TimeOfDay,
+            WeatherForecast = dto.WeatherForecast,
+            WindForecast = dto.WindForecast,
+        };
     }
 }

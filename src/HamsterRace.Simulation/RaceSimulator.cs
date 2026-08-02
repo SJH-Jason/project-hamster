@@ -24,6 +24,7 @@ public sealed class RaceSimulator
     {
         public required Hamster Hamster { get; init; }
         public required DeterministicRng Rng { get; init; }
+        public double EnvMult { get; init; } = 1.0;   // 地形×天氣×風向×時段適性（整場固定）
         public double Distance { get; set; }
         public double Hp { get; set; }
         public double Mp { get; set; }
@@ -45,20 +46,37 @@ public sealed class RaceSimulator
 
         var rng = new DeterministicRng(config.Seed);
         var events = new List<RaceEvent>();
+        var env = config.Environment;
+
+        // 鎖牌後才抽實際天氣/風向（規格 §5）。用 seed 亂數 → 可重現的「押天氣」。
+        string actualWeather = DrawOutcome(env.WeatherForecast, rng);
+        string actualWind = DrawOutcome(env.WindForecast, rng);
+
         var runners = new List<Runner>();
         foreach (var h in config.Hamsters)
         {
+            double envMult =
+                Affinity(h.TerrainAffinity, env.Terrain) *
+                Affinity(h.WeatherAffinity, actualWeather) *
+                Affinity(h.WindAffinity, actualWind) *
+                Affinity(h.TimeAffinity, env.TimeOfDay);
+
             runners.Add(new Runner
             {
                 Hamster = h,
                 Rng = new DeterministicRng(rng.NextULong()), // 每隻獨立子流,固定順序
+                EnvMult = envMult,
                 Hp = h.MaxHp,
                 Mp = h.MaxMp,
             });
         }
 
         events.Add(new RaceEvent(0.0, "-",
-            $"比賽開始。距離 {config.DistanceMeters:0} 公尺,{runners.Count} 隻鼠鼠起跑。"));
+            $"比賽開始。{TerrainName(env.Terrain)}賽道 · {TimeName(env.TimeOfDay)} · " +
+            $"距離 {config.DistanceMeters:0} 公尺,{runners.Count} 隻鼠鼠起跑。"));
+        events.Add(new RaceEvent(0.0, "-",
+            $"實際天氣:{WeatherName(actualWeather)} · 風向:{WindName(actualWind)}" +
+            $"（預報中抽出）。"));
 
         double t = 0.0;
         int finishedCount = 0;
@@ -77,7 +95,7 @@ public sealed class RaceSimulator
                 RacePhase phase = PhaseOf(progress, config.Rules);
 
                 // 1) 嘗試觸發本階段還沒打過的牌
-                TryFireCards(r, phase, t, config, events);
+                TryFireCards(r, phase, t, config, events, env.Terrain, actualWeather, actualWind);
 
                 // 2) 移除過期效果
                 r.Active.RemoveAll(e => !e.WholeRace && t >= e.EndTime);
@@ -88,7 +106,7 @@ public sealed class RaceSimulator
                 double jitter = r.Hamster.SpeedJitter > 0
                     ? r.Rng.NextRange(-r.Hamster.SpeedJitter, r.Hamster.SpeedJitter) : 0.0;
                 double resourceMult = ResourceMultiplier(r, config.Rules);
-                double speed = (r.Hamster.BaseSpeed + cardBonus + jitter) * resourceMult;
+                double speed = (r.Hamster.BaseSpeed + cardBonus + jitter) * resourceMult * r.EnvMult;
                 if (speed < 0) speed = 0;
 
                 // 4) 前進
@@ -155,8 +173,39 @@ public sealed class RaceSimulator
             DistanceMeters = config.DistanceMeters,
             Rankings = rankings,
             Events = events,
+            Terrain = env.Terrain,
+            TimeOfDay = env.TimeOfDay,
+            ActualWeather = actualWeather,
+            ActualWind = actualWind,
         };
     }
+
+    /// <summary>依機率分布抽一個結果（累積機率法,吃 DeterministicRng → 可重現）。</summary>
+    private static string DrawOutcome(IReadOnlyDictionary<string, double> forecast, DeterministicRng rng)
+    {
+        if (forecast.Count == 0) return "none";
+        double total = forecast.Values.Sum();
+        double roll = rng.NextDouble() * total;
+        double cum = 0;
+        foreach (var kv in forecast)
+        {
+            cum += kv.Value;
+            if (roll < cum) return kv.Key;
+        }
+        return forecast.Keys.Last();
+    }
+
+    private static double Affinity(IReadOnlyDictionary<string, double> aff, string key)
+        => aff.TryGetValue(key, out var v) ? v : 1.0;
+
+    private static string TerrainName(string k) => k switch
+    { "track" => "運動場", "grass" => "草地", "asphalt" => "柏油", _ => k };
+    private static string WeatherName(string k) => k switch
+    { "normal" => "一般", "sunny" => "大晴天", "rain" => "大雨", _ => k };
+    private static string WindName(string k) => k switch
+    { "none" => "無風", "tail" => "順風", "head" => "逆風", _ => k };
+    private static string TimeName(string k) => k switch
+    { "morning" => "晨間", "day" => "白天", "evening" => "傍晚", "night" => "夜間", _ => k };
 
     private static RacePhase PhaseOf(double progress, RaceRules rules)
     {
@@ -170,14 +219,35 @@ public sealed class RaceSimulator
     private static bool PhaseMatches(RacePhase cardPhase, RacePhase current)
         => cardPhase == RacePhase.Whole || cardPhase == current;
 
-    private static void TryFireCards(Runner r, RacePhase phase, double t,
-                                     RaceConfig config, List<RaceEvent> events)
+    private static void TryFireCards(Runner r, RacePhase phase, double t, RaceConfig config,
+                                     List<RaceEvent> events,
+                                     string terrain, string weather, string wind)
     {
         foreach (var cardId in r.Hamster.Deck)
         {
             if (r.FiredCards.Contains(cardId)) continue;
             if (!config.Cards.TryGetValue(cardId, out var card)) continue;
             if (!PhaseMatches(card.Phase, phase)) continue;
+
+            // 環境條件卡:實際天氣/地形/風向不符 → 押錯,卡失效（Stage 3 賭注代價）
+            if (card.ConditionType is not null)
+            {
+                string actual = card.ConditionType switch
+                {
+                    "weather" => weather,
+                    "wind" => wind,
+                    "terrain" => terrain,
+                    _ => "",
+                };
+                if (!string.Equals(actual, card.ConditionValue, StringComparison.Ordinal))
+                {
+                    r.FiredCards.Add(cardId);
+                    r.CardsFizzled++;
+                    events.Add(new RaceEvent(t, r.Hamster.Id,
+                        $"{r.Hamster.Name} 的「{card.Name}」押錯條件,沒派上用場。"));
+                    continue;
+                }
+            }
 
             // 付得起才發（HP/MP 不夠 → 卡失效,這就是「亂花體力後段發不出衝刺」的策略張力）
             if (r.Hp < card.HpCost || r.Mp < card.MpCost)

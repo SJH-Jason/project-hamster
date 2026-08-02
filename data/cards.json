@@ -8,6 +8,11 @@
     { "id": "mid_boost",   "name": "中段加速", "phase": "mid",    "speedBonus": 1.5, "durationSeconds": 3.0, "hpCost": 12 },
     { "id": "nut_supply",  "name": "堅果補給", "phase": "mid",    "hpRecover": 25, "mpRecover": 15, "mpCost": 0 },
     { "id": "final_sprint","name": "最後衝刺", "phase": "sprint", "speedBonus": 2.5, "durationSeconds": 2.5, "hpCost": 20, "mpCost": 10 },
-    { "id": "late_kick",   "name": "末段加速", "phase": "sprint", "speedBonus": 1.5, "durationSeconds": 2.0, "hpCost": 10 }
+    { "id": "late_kick",   "name": "末段加速", "phase": "sprint", "speedBonus": 1.5, "durationSeconds": 2.0, "hpCost": 10 },
+
+    { "id": "rain_run",    "name": "雨天適應", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "mpCost": 4, "conditionType": "weather", "conditionValue": "rain" },
+    { "id": "sunny_step",  "name": "晴天步伐", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "hpCost": 4, "conditionType": "weather", "conditionValue": "sunny" },
+    { "id": "grass_adapt", "name": "草地適應", "phase": "whole", "wholeRace": true, "speedBonus": 0.8, "conditionType": "terrain", "conditionValue": "grass" },
+    { "id": "tailwind_use","name": "順風利用", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "conditionType": "wind", "conditionValue": "tail" }
   ]
 }

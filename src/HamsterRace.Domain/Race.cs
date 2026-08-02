@@ -28,6 +28,27 @@ public sealed record RaceRules
     // 之後（>MidPhaseEnd）即衝刺段
 }
 
+/// <summary>
+/// 賽道環境。賽道與時段賽前固定可見;天氣與風向賽前只給「預報機率」,
+/// 鎖牌後才用亂數抽出實際結果（規格 §4.4、§5）——這就是「押天氣」的賭注來源。
+/// </summary>
+public sealed record RaceEnvironment
+{
+    /// <summary>賽道地形 key（track/grass/asphalt…）。對應鼠鼠 TerrainAffinity。</summary>
+    public string Terrain { get; init; } = "track";
+
+    /// <summary>時段 key（morning/day/evening/night）。對應 TimeAffinity。</summary>
+    public string TimeOfDay { get; init; } = "day";
+
+    /// <summary>天氣預報:key→機率（normal/sunny/rain…）。加總約 1。</summary>
+    public IReadOnlyDictionary<string, double> WeatherForecast { get; init; }
+        = new Dictionary<string, double> { ["normal"] = 1.0 };
+
+    /// <summary>風向預報:key→機率（none/tail/head…）。</summary>
+    public IReadOnlyDictionary<string, double> WindForecast { get; init; }
+        = new Dictionary<string, double> { ["none"] = 1.0 };
+}
+
 /// <summary>一場比賽的設定。</summary>
 public sealed record RaceConfig
 {
@@ -48,6 +69,9 @@ public sealed record RaceConfig
     /// <summary>卡牌型錄（id → Card）。Stage 2 起用。</summary>
     public IReadOnlyDictionary<string, Card> Cards { get; init; }
         = new Dictionary<string, Card>();
+
+    /// <summary>賽道環境（Stage 3）。</summary>
+    public RaceEnvironment Environment { get; init; } = new();
 
     public RaceRules Rules { get; init; } = new();
 }
@@ -81,4 +105,10 @@ public sealed record RaceResult
     public required double DistanceMeters { get; init; }
     public required IReadOnlyList<HamsterResult> Rankings { get; init; }
     public required IReadOnlyList<RaceEvent> Events { get; init; }
+
+    // Stage 3:實際抽出的環境（供戰報顯示「預報 vs 實際」）
+    public string Terrain { get; init; } = "";
+    public string TimeOfDay { get; init; } = "";
+    public string ActualWeather { get; init; } = "";
+    public string ActualWind { get; init; } = "";
 }

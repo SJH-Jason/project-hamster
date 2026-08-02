@@ -1,0 +1,16 @@
+{
+  "_comment": "押天氣示範:泡芙帶 rain_run(雨天適應)賭注卡。押對(雨天)狂加速,押錯(非雨天)啞掉。",
+  "hamsters": [
+    { "id": "puff", "name": "泡芙", "baseSpeed": 5.0, "speedJitter": 0.35, "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
+      "deck": ["start_dash", "steady_pace", "rain_run", "mid_boost", "nut_supply", "final_sprint"] },
+    { "id": "mochi", "name": "麻糬", "baseSpeed": 4.7, "speedJitter": 0.75, "maxHp": 120, "maxMp": 80, "staminaFactor": 1.0,
+      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"],
+      "weatherAffinity": { "rain": 1.15, "sunny": 0.95 } },
+    { "id": "brownie", "name": "黑糖", "baseSpeed": 5.15, "speedJitter": 0.2, "maxHp": 90, "maxMp": 90, "staminaFactor": 1.15,
+      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "late_kick", "final_sprint"],
+      "weatherAffinity": { "sunny": 1.12, "rain": 0.85 }, "terrainAffinity": { "asphalt": 1.1, "grass": 0.95 } },
+    { "id": "peanut", "name": "花生", "baseSpeed": 4.9, "speedJitter": 0.5, "maxHp": 110, "maxMp": 110, "staminaFactor": 0.9,
+      "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"],
+      "windAffinity": { "head": 1.1 } }
+  ]
+}
