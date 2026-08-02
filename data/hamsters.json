@@ -2,7 +2,7 @@
   "_comment": "Stage 3 四隻原型鼠。新增適性(terrain/weather/wind/time),查無 key 視為 1.0。適性給每隻鼠環境定位:黑糖愛乾爽快場(晴天/柏油)怕雨、麻糬愛雨、花生逆風反利用且無明顯弱點。數值都可調。",
   "hamsters": [
     {
-      "id": "puff", "name": "泡芙", "baseSpeed": 5.0, "speedJitter": 0.35,
+      "id": "puff", "name": "泡芙", "baseSpeed": 4.92, "speedJitter": 0.35,
       "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "conserve", "mid_boost", "nut_supply", "final_sprint"],
       "terrainAffinity": { "grass": 1.05 },
@@ -13,15 +13,15 @@
       "id": "mochi", "name": "麻糬", "baseSpeed": 4.7, "speedJitter": 0.75,
       "maxHp": 120, "maxMp": 80, "staminaFactor": 1.0,
       "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"],
-      "weatherAffinity": { "rain": 1.15, "sunny": 0.95 }, "terrainAffinity": { "grass": 1.05 },
+      "weatherAffinity": { "rain": 1.10, "sunny": 0.95 }, "terrainAffinity": { "grass": 1.05 },
       "skills": ["dash_burst", "comeback"],
       "_style": "爆發型:雨天之鼠,晴天略弱;逆境突進打後追"
     },
     {
       "id": "brownie", "name": "黑糖", "baseSpeed": 5.15, "speedJitter": 0.2,
-      "maxHp": 90, "maxMp": 90, "staminaFactor": 1.15,
-      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "late_kick", "final_sprint"],
-      "weatherAffinity": { "sunny": 1.12, "rain": 0.85 },
+      "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
+      "deck": ["start_dash", "steady_pace", "nut_supply", "mid_boost", "late_kick", "final_sprint"],
+      "weatherAffinity": { "sunny": 1.18, "rain": 0.85 },
       "terrainAffinity": { "asphalt": 1.1, "track": 1.05, "grass": 0.95 },
       "windAffinity": { "head": 0.9 },
       "skills": ["dash_burst", "last_spurt"],
@@ -29,7 +29,7 @@
     },
     {
       "id": "peanut", "name": "花生", "baseSpeed": 4.9, "speedJitter": 0.5,
-      "maxHp": 110, "maxMp": 110, "staminaFactor": 0.9,
+      "maxHp": 110, "maxMp": 110, "staminaFactor": 0.96,
       "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"],
       "windAffinity": { "head": 1.1 },
       "skills": ["steady_breath", "comeback"],

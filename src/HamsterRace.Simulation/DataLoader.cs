@@ -100,6 +100,36 @@ public static class DataLoader
         });
     }
 
+    // ---- 平衡參數 ----
+    private sealed class RulesDto
+    {
+        public double ResourceFloor { get; set; } = 0.5;
+        public double HpDrainPer10m { get; set; } = 5.0;
+        public double MpDrainPer10m { get; set; } = 5.0;
+        public double FatigueStartMult { get; set; } = 0.5;
+        public double FatigueEndMult { get; set; } = 1.5;
+        public double StartPhaseEnd { get; set; } = 0.15;
+        public double EarlyPhaseEnd { get; set; } = 0.40;
+        public double MidPhaseEnd { get; set; } = 0.70;
+    }
+
+    public static RaceRules LoadRules(string path)
+    {
+        var d = JsonSerializer.Deserialize<RulesDto>(File.ReadAllText(path), Options)
+                ?? new RulesDto();
+        return new RaceRules
+        {
+            ResourceFloor = d.ResourceFloor,
+            HpDrainPer10m = d.HpDrainPer10m,
+            MpDrainPer10m = d.MpDrainPer10m,
+            FatigueStartMult = d.FatigueStartMult,
+            FatigueEndMult = d.FatigueEndMult,
+            StartPhaseEnd = d.StartPhaseEnd,
+            EarlyPhaseEnd = d.EarlyPhaseEnd,
+            MidPhaseEnd = d.MidPhaseEnd,
+        };
+    }
+
     // ---- 賽道環境 ----
     private sealed class RaceFile { public List<EnvDto> Races { get; set; } = new(); }
 
