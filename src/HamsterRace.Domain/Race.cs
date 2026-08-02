@@ -3,8 +3,13 @@ namespace HamsterRace.Domain;
 /// <summary>平衡參數（規格 §7.3 資源折扣、階段界線）。集中可調,不寫死在引擎。</summary>
 public sealed record RaceRules
 {
-    /// <summary>低於「上限×此比例」視為「資源不足」→ 速度打 75 折。</summary>
-    public double LowResourceFraction { get; init; } = 0.30;
+    /// <summary>
+    /// 單一資源耗盡時的速度地板（每項）。速度倍率 = HP因子 × MP因子,
+    /// 每項因子 = ResourceFloor + (1-ResourceFloor)×該資源剩餘比例。
+    /// 0.5 時:兩滿=1.0、單項歸零=0.5、雙歸零=0.25(對齊規格 §7.3 端點),
+    /// 但中間連續遞減——體力/精神一掉,速度就跟著掉。
+    /// </summary>
+    public double ResourceFloor { get; init; } = 0.5;
 
     // --- 基本體力/精神消耗（每跑一段距離扣,與時間無關）---
     /// <summary>每 10 公尺的基本 HP 消耗。</summary>

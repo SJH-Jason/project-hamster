@@ -219,17 +219,18 @@ public sealed class RaceSimulator
         }
     }
 
-    /// <summary>資源不足的速度折扣（規格 §7.3）。</summary>
+    /// <summary>
+    /// 資源不足的速度折扣（連續遞減,規格 §7.3 為端點）。
+    /// 速度倍率 = HP因子 × MP因子;每項因子 = floor + (1-floor)×剩餘比例。
+    /// 體力或精神一掉,基本速度就按比例往下掉;耗越兇跑越慢。
+    /// </summary>
     private static double ResourceMultiplier(Runner r, RaceRules rules)
     {
-        bool hpZero = r.Hp <= 0;
-        bool mpZero = r.Mp <= 0;
-        if (hpZero && mpZero) return 0.25;
-        if (hpZero || mpZero) return 0.50;
-
-        bool hpLow = r.Hp < rules.LowResourceFraction * r.Hamster.MaxHp;
-        bool mpLow = r.Mp < rules.LowResourceFraction * r.Hamster.MaxMp;
-        if (hpLow || mpLow) return 0.75;
-        return 1.0;
+        double floor = rules.ResourceFloor;
+        double hpFrac = r.Hamster.MaxHp > 0 ? Math.Clamp(r.Hp / r.Hamster.MaxHp, 0, 1) : 1.0;
+        double mpFrac = r.Hamster.MaxMp > 0 ? Math.Clamp(r.Mp / r.Hamster.MaxMp, 0, 1) : 1.0;
+        double hpFactor = floor + (1 - floor) * hpFrac;
+        double mpFactor = floor + (1 - floor) * mpFrac;
+        return hpFactor * mpFactor;
     }
 }
