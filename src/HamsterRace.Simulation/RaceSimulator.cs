@@ -3,23 +3,39 @@ using HamsterRace.Domain;
 namespace HamsterRace.Simulation;
 
 /// <summary>
-/// Stage 1 純模擬核心:固定時間步進(tick)引擎。
-/// 目前只用「基礎跑速 + 每 tick 微小波動」推進,產出名次、完賽時間與逐段事件。
-/// 卡牌(Stage 2)、環境倍率(Stage 3)、技能(Stage 4)之後掛在 ComputeTickSpeed 上。
+/// 模擬核心:固定時間步進(tick)引擎。
+///   Stage 1:基礎跑速＋波動。
+///   Stage 2:卡牌（依階段觸發、消耗 HP/MP、補給）、體力自然衰減、資源不足折扣(§7.3)。
+/// 環境倍率(Stage 3)、技能(Stage 4)之後同樣掛在 ComputeTickSpeed。
 ///
-/// 確定性保證:所有隨機都來自 DeterministicRng(seed);同 seed+同設定 → 同結果。
+/// 確定性:所有隨機來自 DeterministicRng(seed);同 seed+同設定 → 同結果。
 /// </summary>
 public sealed class RaceSimulator
 {
+    private sealed class ActiveEffect
+    {
+        public double SpeedBonus { get; init; }
+        public double StaminaSavePerSec { get; init; }
+        public double EndTime { get; init; }      // 到此時間（秒）失效
+        public bool WholeRace { get; init; }
+    }
+
     private sealed class Runner
     {
         public required Hamster Hamster { get; init; }
+        public required DeterministicRng Rng { get; init; }
         public double Distance { get; set; }
+        public double Hp { get; set; }
+        public double Mp { get; set; }
         public double SpeedSum { get; set; }
         public double MaxSpeed { get; set; }
         public int Ticks { get; set; }
         public bool Finished { get; set; }
         public double FinishTime { get; set; }
+        public HashSet<string> FiredCards { get; } = new();
+        public List<ActiveEffect> Active { get; } = new();
+        public int CardsFired { get; set; }
+        public int CardsFizzled { get; set; }
     }
 
     public RaceResult Run(RaceConfig config)
@@ -29,15 +45,16 @@ public sealed class RaceSimulator
 
         var rng = new DeterministicRng(config.Seed);
         var events = new List<RaceEvent>();
-
-        // 每隻鼠一個獨立的 RNG 子流,順序固定 → 確定性且彼此不互相干擾。
         var runners = new List<Runner>();
-        var rngByHamster = new Dictionary<string, DeterministicRng>();
         foreach (var h in config.Hamsters)
         {
-            runners.Add(new Runner { Hamster = h });
-            // 用主 rng 派生每隻的種子,保證固定順序 → 可重現。
-            rngByHamster[h.Id] = new DeterministicRng(rng.NextULong());
+            runners.Add(new Runner
+            {
+                Hamster = h,
+                Rng = new DeterministicRng(rng.NextULong()), // 每隻獨立子流,固定順序
+                Hp = h.MaxHp,
+                Mp = h.MaxMp,
+            });
         }
 
         events.Add(new RaceEvent(0.0, "-",
@@ -46,7 +63,7 @@ public sealed class RaceSimulator
         double t = 0.0;
         int finishedCount = 0;
         int rankCounter = 0;
-        var finishOrder = new Dictionary<string, int>(); // hamsterId -> rank
+        var finishOrder = new Dictionary<string, int>();
 
         while (t < config.MaxRaceSeconds && finishedCount < runners.Count)
         {
@@ -56,9 +73,29 @@ public sealed class RaceSimulator
             {
                 if (r.Finished) continue;
 
-                double speed = ComputeTickSpeed(r.Hamster, rngByHamster[r.Hamster.Id]);
+                double progress = r.Distance / config.DistanceMeters;
+                RacePhase phase = PhaseOf(progress, config.Rules);
+
+                // 1) 嘗試觸發本階段還沒打過的牌
+                TryFireCards(r, phase, t, config, events);
+
+                // 2) 移除過期效果
+                r.Active.RemoveAll(e => !e.WholeRace && t >= e.EndTime);
+
+                // 3) 體力自然消耗（扣掉保留體力卡的節省）
+                double staminaSave = r.Active.Sum(e => e.StaminaSavePerSec);
+                double drain = Math.Max(0, r.Hamster.StaminaDrainPerSec - staminaSave);
+                r.Hp = Math.Max(0, r.Hp - drain * config.TickSeconds);
+
+                // 4) 算速度:( 基礎 + 卡加成 + 波動 ) × 資源折扣
+                double cardBonus = r.Active.Sum(e => e.SpeedBonus);
+                double jitter = r.Hamster.SpeedJitter > 0
+                    ? r.Rng.NextRange(-r.Hamster.SpeedJitter, r.Hamster.SpeedJitter) : 0.0;
+                double resourceMult = ResourceMultiplier(r, config.Rules);
+                double speed = (r.Hamster.BaseSpeed + cardBonus + jitter) * resourceMult;
                 if (speed < 0) speed = 0;
 
+                // 5) 前進
                 r.Distance += speed * config.TickSeconds;
                 r.SpeedSum += speed;
                 r.Ticks++;
@@ -72,15 +109,14 @@ public sealed class RaceSimulator
                     rankCounter++;
                     finishOrder[r.Hamster.Id] = rankCounter;
                     events.Add(new RaceEvent(t, r.Hamster.Id,
-                        $"{r.Hamster.Name} 以第 {rankCounter} 名完賽,用時 {t:0.0} 秒。"));
+                        $"{r.Hamster.Name} 以第 {rankCounter} 名完賽,用時 {t:0.0} 秒" +
+                        $"（剩餘 HP {r.Hp:0}／MP {r.Mp:0}）。"));
                 }
             }
         }
 
-        // 未完賽的（撞到時間上限）依已跑距離排在完賽者之後。
         var unfinished = runners.Where(r => !r.Finished)
-                                .OrderByDescending(r => r.Distance)
-                                .ToList();
+                                .OrderByDescending(r => r.Distance).ToList();
         foreach (var r in unfinished)
         {
             rankCounter++;
@@ -97,6 +133,10 @@ public sealed class RaceSimulator
                 AverageSpeed = r.Ticks > 0 ? r.SpeedSum / r.Ticks : 0,
                 MaxSpeed = r.MaxSpeed,
                 Finished = r.Finished,
+                RemainingHp = r.Hp,
+                RemainingMp = r.Mp,
+                CardsFired = r.CardsFired,
+                CardsFizzled = r.CardsFizzled,
             })
             .OrderBy(x => x.Rank)
             .ToList();
@@ -111,13 +151,74 @@ public sealed class RaceSimulator
         };
     }
 
-    /// <summary>
-    /// 本 tick 的瞬時速度。Stage 1 = 基礎跑速 ± 波動。
-    /// 之後階段會在這裡疊加:卡牌加成、地形/天氣/風向/時段倍率、技能、HP/MP 折扣。
-    /// </summary>
-    private static double ComputeTickSpeed(Hamster h, DeterministicRng rng)
+    private static RacePhase PhaseOf(double progress, RaceRules rules)
     {
-        double jitter = h.SpeedJitter > 0 ? rng.NextRange(-h.SpeedJitter, h.SpeedJitter) : 0.0;
-        return h.BaseSpeed + jitter;
+        if (progress < rules.StartPhaseEnd) return RacePhase.Start;
+        if (progress < rules.EarlyPhaseEnd) return RacePhase.Early;
+        if (progress < rules.MidPhaseEnd) return RacePhase.Mid;
+        return RacePhase.Sprint;
+    }
+
+    /// <summary>卡片的觸發時機是否涵蓋當前階段。</summary>
+    private static bool PhaseMatches(RacePhase cardPhase, RacePhase current)
+        => cardPhase == RacePhase.Whole || cardPhase == current;
+
+    private static void TryFireCards(Runner r, RacePhase phase, double t,
+                                     RaceConfig config, List<RaceEvent> events)
+    {
+        foreach (var cardId in r.Hamster.Deck)
+        {
+            if (r.FiredCards.Contains(cardId)) continue;
+            if (!config.Cards.TryGetValue(cardId, out var card)) continue;
+            if (!PhaseMatches(card.Phase, phase)) continue;
+
+            // 付得起才發（HP/MP 不夠 → 卡失效,這就是「亂花體力後段發不出衝刺」的策略張力）
+            if (r.Hp < card.HpCost || r.Mp < card.MpCost)
+            {
+                r.FiredCards.Add(cardId); // 標記已嘗試,不重複試
+                r.CardsFizzled++;
+                events.Add(new RaceEvent(t, r.Hamster.Id,
+                    $"{r.Hamster.Name} 想用「{card.Name}」但資源不足,發不出來。"));
+                continue;
+            }
+
+            r.FiredCards.Add(cardId);
+            r.Hp -= card.HpCost;
+            r.Mp -= card.MpCost;
+            if (card.HpRecover > 0)
+                r.Hp = Math.Min(r.Hamster.MaxHp, r.Hp + card.HpRecover);
+            r.CardsFired++;
+
+            if (card.SpeedBonus != 0 || card.StaminaSavePerSec != 0)
+            {
+                r.Active.Add(new ActiveEffect
+                {
+                    SpeedBonus = card.SpeedBonus,
+                    StaminaSavePerSec = card.StaminaSavePerSec,
+                    EndTime = t + card.DurationSeconds,
+                    WholeRace = card.WholeRace,
+                });
+            }
+
+            string detail = card.HpRecover > 0
+                ? $"回復 HP {card.HpRecover}"
+                : $"+{card.SpeedBonus:0.0} m/s";
+            events.Add(new RaceEvent(t, r.Hamster.Id,
+                $"{r.Hamster.Name} 打出「{card.Name}」（{detail}）。"));
+        }
+    }
+
+    /// <summary>資源不足的速度折扣（規格 §7.3）。</summary>
+    private static double ResourceMultiplier(Runner r, RaceRules rules)
+    {
+        bool hpZero = r.Hp <= 0;
+        bool mpZero = r.Mp <= 0;
+        if (hpZero && mpZero) return 0.25;
+        if (hpZero || mpZero) return 0.50;
+
+        bool hpLow = r.Hp < rules.LowResourceFraction * r.Hamster.MaxHp;
+        bool mpLow = r.Mp < rules.LowResourceFraction * r.Hamster.MaxMp;
+        if (hpLow || mpLow) return 0.75;
+        return 1.0;
     }
 }

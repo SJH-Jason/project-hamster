@@ -8,9 +8,9 @@ using HamsterRace.Simulation;
 ulong seed = args.Length > 0 && ulong.TryParse(args[0], out var s) ? s : 42UL;
 double distance = args.Length > 1 && double.TryParse(args[1], out var d) ? d : 100.0;
 
-// 找 data/hamsters.json(從執行檔往上找專案根)
-string dataPath = FindDataFile("hamsters.json");
-var hamsters = DataLoader.LoadHamsters(dataPath);
+// 找 data/*.json(從執行檔往上找專案根)
+var hamsters = DataLoader.LoadHamsters(FindDataFile("hamsters.json"));
+var cards = DataLoader.LoadCards(FindDataFile("cards.json"));
 
 var config = new RaceConfig
 {
@@ -18,6 +18,7 @@ var config = new RaceConfig
     Seed = seed,
     DistanceMeters = distance,
     Hamsters = hamsters,
+    Cards = cards,
 };
 
 var result = new RaceSimulator().Run(config);

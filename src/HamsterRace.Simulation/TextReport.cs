@@ -25,7 +25,9 @@ public static class TextReport
             string time = r.Finished ? $"{r.FinishTimeSeconds,5:0.0}s" : "未完賽";
             sb.AppendLine(
                 $"  第{r.Rank}名  {r.Name,-6}  完賽 {time}  " +
-                $"均速 {r.AverageSpeed:0.00} m/s  最高 {r.MaxSpeed:0.00} m/s");
+                $"均速 {r.AverageSpeed:0.00}  最高 {r.MaxSpeed:0.00}  " +
+                $"剩HP {r.RemainingHp,3:0}／MP {r.RemainingMp,3:0}  " +
+                $"出牌 {r.CardsFired}" + (r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : ""));
         }
         sb.AppendLine("════════════════════════════════════");
         return sb.ToString();

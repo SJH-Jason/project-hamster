@@ -1,5 +1,5 @@
 {
-  "_comment": "Stage 1 四隻原型鼠 A/B/C/D 的可玩草案數值。基礎跑速接近、用波動與(日後)技能拉開差異，先確保沒有全環境最強。數值都可調，卡凡看手感後再平衡。",
+  "_comment": "Stage 2 四隻原型鼠。staminaDrainPerSec=每秒體力消耗(低HP+高消耗=後段衰減);deck=6 張牌。數值都可調,卡凡看手感後再平衡。",
   "hamsters": [
     {
       "id": "puff",
@@ -8,7 +8,9 @@
       "speedJitter": 0.35,
       "maxHp": 100,
       "maxMp": 100,
-      "_style": "均衡型：速度中庸、波動小，穩定跑者"
+      "staminaDrainPerSec": 2.0,
+      "deck": ["start_dash", "steady_pace", "conserve", "mid_boost", "nut_supply", "final_sprint"],
+      "_style": "均衡型:速度中庸、波動小,穩定跑者"
     },
     {
       "id": "mochi",
@@ -17,7 +19,9 @@
       "speedJitter": 0.75,
       "maxHp": 120,
       "maxMp": 80,
-      "_style": "爆發型：均速略低但波動大，會有神來一筆也會凸槌"
+      "staminaDrainPerSec": 2.0,
+      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"],
+      "_style": "爆發型:均速略低但波動大、體力厚,神來一筆也會凸槌"
     },
     {
       "id": "brownie",
@@ -26,7 +30,9 @@
       "speedJitter": 0.2,
       "maxHp": 90,
       "maxMp": 90,
-      "_style": "領跑型：均速最高、最穩，但體力(HP)較低，長程會露餡"
+      "staminaDrainPerSec": 3.2,
+      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "late_kick", "final_sprint"],
+      "_style": "領跑型:均速最高最穩,但體力低、消耗大,後段易露餡"
     },
     {
       "id": "peanut",
@@ -35,7 +41,9 @@
       "speedJitter": 0.5,
       "maxHp": 110,
       "maxMp": 110,
-      "_style": "全能型：各項中上、資源多，靠技能與補給打後段"
+      "staminaDrainPerSec": 1.8,
+      "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"],
+      "_style": "全能型:各項中上、資源多,靠補給與末段打後段"
     }
   ]
 }

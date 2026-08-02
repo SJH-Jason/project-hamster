@@ -22,6 +22,12 @@ public sealed record Hamster
     public int MaxHp { get; init; } = 100;
     public int MaxMp { get; init; } = 100;
 
+    /// <summary>每秒自然體力消耗（跑步的基礎負荷）。低 HP＋高消耗 = 後段容易衰減。</summary>
+    public double StaminaDrainPerSec { get; init; } = 0.0;
+
+    /// <summary>這隻鼠帶的牌組（card id）。Stage 2 每隻 6 張;Stage 6 才做選牌 UI。</summary>
+    public IReadOnlyList<string> Deck { get; init; } = new List<string>();
+
     // --- 以下 Stage 3+ 才生效，先給預設，維持可攜 ---
 
     /// <summary>地形適性倍率，例如 { "grass": 1.1 }；查無 key 視為 1.0。</summary>
