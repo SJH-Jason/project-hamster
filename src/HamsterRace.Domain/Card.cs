@@ -19,6 +19,9 @@ public sealed record Card
     public required string Id { get; init; }
     public required string Name { get; init; }
 
+    /// <summary>配牌槽位:start/accel/mid/sprint/function（功能槽不限，其餘一格一張）。</summary>
+    public string Slot { get; init; } = "function";
+
     /// <summary>此卡在哪個階段觸發。</summary>
     public required RacePhase Phase { get; init; }
 

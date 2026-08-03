@@ -130,3 +130,35 @@ body {
   .again { flex-direction: row; }
   .again .start, .again .ghost { flex: 1; }
 }
+
+/* ---- v2: track / slots / skill ---- */
+.pill {
+  background: var(--panel); border: 2px solid #3a2e56; border-radius: 20px;
+  padding: 8px 16px; color: var(--text); cursor: pointer; font-size: .92rem; font-weight: 600;
+}
+.pill.sel { border-color: var(--accent2); background: var(--panel2); color: var(--accent2); }
+.pill.sm { padding: 6px 12px; font-size: .82rem; }
+.track-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.intel { margin-top: 4px; }
+
+.slot { margin-bottom: 10px; }
+.slot-label { font-size: .82rem; color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+.slot-cards { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.chip {
+  flex: 0 0 auto; background: var(--panel); border: 2px solid #3a2e56; border-radius: 10px;
+  padding: 7px 10px; color: var(--text); cursor: pointer; text-align: left; min-width: 108px;
+}
+.chip.sel { border-color: var(--accent); background: var(--panel2); box-shadow: 0 0 0 2px var(--accent) inset; }
+.chip-name { display: block; font-weight: 700; font-size: .84rem; }
+.chip-eff { display: block; color: var(--muted); font-size: .66rem; margin-top: 2px; }
+
+.skill-row { display: flex; gap: 8px; }
+.skill-card {
+  flex: 1; background: var(--panel); border: 2px solid #3a2e56; border-radius: 12px;
+  padding: 10px; color: var(--text); cursor: pointer; text-align: left;
+}
+.skill-card.sel { border-color: var(--me); background: var(--panel2); box-shadow: 0 0 0 2px var(--me) inset; }
+.sk-name { font-weight: 700; }
+.sk-eff { color: var(--muted); font-size: .68rem; margin-top: 3px; }
+.trig-label { margin: 10px 0 5px; font-size: .82rem; color: var(--muted); }
+.trig-row { display: flex; gap: 6px; flex-wrap: wrap; }

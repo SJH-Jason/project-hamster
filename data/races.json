@@ -1,12 +1,26 @@
 {
-  "_comment": "賽事環境。terrain/timeOfDay 賽前固定可見;weatherForecast/windForecast 只是預報機率,鎖牌後才用亂數(seed)抽實際。這就是『押天氣』的來源。機率加總約 1。",
+  "_comment": "三種賽道。terrain/timeOfDay 賽前固定;天氣/風向只給預報,鎖牌後才抽。各賽道天氣傾向不同,配合地形卡與鼠鼠適性。",
   "races": [
     {
-      "id": "R-001",
+      "id": "stadium",
+      "terrain": "track",
+      "timeOfDay": "day",
+      "weatherForecast": { "normal": 0.6, "sunny": 0.3, "rain": 0.1 },
+      "windForecast": { "none": 0.5, "tail": 0.3, "head": 0.2 }
+    },
+    {
+      "id": "grass",
       "terrain": "grass",
       "timeOfDay": "day",
       "weatherForecast": { "normal": 0.5, "sunny": 0.2, "rain": 0.3 },
       "windForecast": { "none": 0.4, "tail": 0.35, "head": 0.25 }
+    },
+    {
+      "id": "asphalt",
+      "terrain": "asphalt",
+      "timeOfDay": "day",
+      "weatherForecast": { "normal": 0.5, "sunny": 0.4, "rain": 0.1 },
+      "windForecast": { "none": 0.35, "tail": 0.35, "head": 0.3 }
     }
   ]
 }

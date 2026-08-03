@@ -66,6 +66,7 @@ public static class DataLoader
     {
         public string Id { get; set; } = "";
         public string Name { get; set; } = "";
+        public string Slot { get; set; } = "function";
         public RacePhase Phase { get; set; }
         public double SpeedBonus { get; set; }
         public double DurationSeconds { get; set; } = 2.0;
@@ -90,6 +91,7 @@ public static class DataLoader
         {
             Id = d.Id,
             Name = d.Name,
+            Slot = d.Slot,
             Phase = d.Phase,
             SpeedBonus = d.SpeedBonus,
             DurationSeconds = d.DurationSeconds,
@@ -206,5 +208,18 @@ public static class DataLoader
             WeatherForecast = dto.WeatherForecast,
             WindForecast = dto.WindForecast,
         };
+    }
+
+    /// <summary>解析 races.json 的全部賽事（給前端做賽道選擇）。</summary>
+    public static IReadOnlyList<(string Id, RaceEnvironment Env)> ParseRaces(string json)
+    {
+        var file = JsonSerializer.Deserialize<RaceFile>(json, Options) ?? new RaceFile();
+        return file.Races.Select(dto => (dto.Id, new RaceEnvironment
+        {
+            Terrain = dto.Terrain,
+            TimeOfDay = dto.TimeOfDay,
+            WeatherForecast = dto.WeatherForecast,
+            WindForecast = dto.WindForecast,
+        })).ToList();
     }
 }

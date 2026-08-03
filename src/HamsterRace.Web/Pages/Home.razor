@@ -14,15 +14,26 @@
     }
     else if (_phase == Phase.Config)
     {
-        <section class="intel">
-            <div class="intel-line">🏟️ @Terrain(Game.Env.Terrain)賽道 · @TimeName(Game.Env.TimeOfDay) · 100 公尺</div>
-            <div class="intel-line">🌦️ 天氣預報：@Forecast(Game.Env.WeatherForecast, WeatherName)</div>
-            <div class="intel-line">🌬️ 風向預報：@Forecast(Game.Env.WindForecast, WindName)</div>
-            <div class="intel-hint">實際天氣鎖牌後才抽 → 要不要押天氣自己賭 🎲</div>
+        var env = TrackEnv();
+
+        <section class="pick">
+            <h2>① 選賽道</h2>
+            <div class="track-row">
+                @foreach (var (id, _) in Game.Races)
+                {
+                    var tid = id;
+                    <button class="pill @(tid == _trackId ? "sel" : "")" @onclick="() => _trackId = tid">@Terrain(TerrainOf(tid))</button>
+                }
+            </div>
+            <div class="intel">
+                <div class="intel-line">🌦️ 天氣預報：@Forecast(env.WeatherForecast, WeatherName)</div>
+                <div class="intel-line">🌬️ 風向預報：@Forecast(env.WindForecast, WindName)</div>
+                <div class="intel-hint">實際天氣鎖牌後才抽 → 要不要押天氣自己賭 🎲</div>
+            </div>
         </section>
 
         <section class="pick">
-            <h2>① 選你要指導的鼠鼠</h2>
+            <h2>② 選你要指導的鼠鼠</h2>
             <div class="hamster-row">
                 @for (int i = 0; i < Game.Hamsters.Count; i++)
                 {
@@ -38,40 +49,62 @@
         </section>
 
         <section class="pick">
-            <h2>② 配 6 張牌 <span class="count @(_deck.Count == 6 ? "ok" : "")">@_deck.Count / 6</span></h2>
-            <div class="card-grid">
-                @foreach (var c in Game.Cards.Values)
-                {
-                    var id = c.Id; var on = _deck.Contains(id);
-                    <button class="game-card @(on ? "on" : "") @(!on && _deck.Count >= 6 ? "dim" : "")"
-                            @onclick="() => ToggleCard(id)">
-                        <div class="gc-top"><span class="gc-phase">@PhaseName(c.Phase)</span><span class="gc-name">@c.Name</span></div>
-                        <div class="gc-eff">@CardEffect(c)</div>
-                        @if (c.ConditionType is not null)
+            <h2>③ 配牌（6 槽）<span class="count @(DeckCount() == 6 ? "ok" : "")">@DeckCount() / 6</span></h2>
+            @foreach (var (key, label) in Slots)
+            {
+                var slotKey = key;
+                <div class="slot">
+                    <div class="slot-label">@label</div>
+                    <div class="slot-cards">
+                        @foreach (var c in CardsForSlot(slotKey))
                         {
-                            <div class="gc-bet">🎲 押@CondName(c)</div>
+                            var cid = c.Id;
+                            <button class="chip @(_slots[slotKey] == cid ? "sel" : "")" @onclick="() => PickCard(slotKey, cid)">
+                                <span class="chip-name">@c.Name</span>
+                                <span class="chip-eff">@CardEffect(c)@(c.ConditionType is not null ? $" 🎲{CondName(c)}" : "")</span>
+                            </button>
                         }
+                    </div>
+                </div>
+            }
+            <div class="deck-actions">
+                <button class="ghost" @onclick="UseDefault">用這隻鼠的預設牌組</button>
+                <button class="ghost" @onclick="ClearDeck">清空</button>
+            </div>
+        </section>
+
+        <section class="pick">
+            <h2>④ 專屬技能（兩選一 ＋ 發動時機）</h2>
+            <div class="skill-row">
+                @foreach (var sid in Game.Hamsters[_meIndex].Skills)
+                {
+                    var s = Game.Skills[sid];
+                    <button class="skill-card @(sid == _skillId ? "sel" : "")" @onclick="() => _skillId = sid">
+                        <div class="sk-name">@s.Name</div>
+                        <div class="sk-eff">@SkillEffect(s)</div>
                     </button>
                 }
             </div>
-            <div class="deck-actions">
-                <button class="ghost" @onclick="UseDefault">用這隻鼠的預設牌組</button>
-                @if (_deck.Count > 0)
+            <div class="trig-label">發動時機：</div>
+            <div class="trig-row">
+                @foreach (var t in Triggers)
                 {
-                    <button class="ghost" @onclick="() => _deck.Clear()">清空</button>
+                    var tt = t;
+                    <button class="pill sm @(tt.Label == _trigLabel ? "sel" : "")" @onclick="() => SetTrigger(tt)">@tt.Label</button>
                 }
             </div>
         </section>
 
-        <button class="start" disabled="@(_deck.Count == 0)" @onclick="StartRace">
-            🏁 開賽！@(_deck.Count == 0 ? "（先選牌或用預設）" : "")
+        <button class="start" disabled="@(DeckCount() == 0)" @onclick="StartRace">
+            🏁 開賽！@(DeckCount() == 0 ? "（至少放一張牌）" : "")
         </button>
     }
     else
     {
         <section class="race">
             <div class="race-banner">
-                <span>🌦️ @WeatherName(_result!.ActualWeather)</span>
+                <span>🏟️ @Terrain(_result!.Terrain)</span>
+                <span>🌦️ @WeatherName(_result.ActualWeather)</span>
                 <span>🌬️ @WindName(_result.ActualWind)</span>
                 <span class="clock">@($"{CurrentTime:0.0}")s</span>
             </div>
@@ -110,9 +143,8 @@
                     </ol>
                     <div class="myline">@MyResultLine()</div>
                     <div class="again">
-                        <button class="start" @onclick="StartRace">🔁 同鼠同牌·再抽天氣</button>
-                        <button class="ghost" @onclick="BackToDeck">♻️ 重配牌組</button>
-                        <button class="ghost" @onclick="BackToConfig">🐹 換鼠</button>
+                        <button class="start" @onclick="StartRace">🔁 同設定·再抽天氣</button>
+                        <button class="ghost" @onclick="BackToConfig">⚙️ 回配置</button>
                     </div>
                 </div>
             }
@@ -126,8 +158,30 @@
     enum Phase { Config, Racing, Result }
     Phase _phase = Phase.Config;
 
+    static readonly (string Key, string Label)[] Slots =
+    {
+        ("start", "起跑"), ("accel", "加速"), ("mid", "中期"),
+        ("sprint", "衝刺"), ("func1", "功能 a"), ("func2", "功能 b")
+    };
+
+    record Trig(string Label, SkillTrigger T, double V);
+    static readonly Trig[] Triggers =
+    {
+        new("開賽就放", SkillTrigger.Periodic, 0),
+        new("剩 50m", SkillTrigger.RemainingM, 50),
+        new("剩 20m", SkillTrigger.RemainingM, 20),
+        new("落後時", SkillTrigger.RankBehind, 0),
+        new("體力不支", SkillTrigger.HpBelow, 0.35),
+    };
+
+    string _trackId = "grass";
     int _meIndex = 0;
-    readonly List<string> _deck = new();
+    readonly Dictionary<string, string?> _slots = new()
+    { ["start"] = null, ["accel"] = null, ["mid"] = null, ["sprint"] = null, ["func1"] = null, ["func2"] = null };
+    string _skillId = "";
+    string _trigLabel = "剩 20m";
+    Trig _trig = Triggers[2];
+
     RaceResult? _result;
     int _frame;
     string _currentEvent = "";
@@ -138,35 +192,69 @@
     protected override async Task OnInitializedAsync()
     {
         await Game.EnsureLoadedAsync();
+        _trackId = Game.Races.Count > 0 ? Game.Races[0].Id : "grass";
         SelectHamster(0);
+    }
+
+    RaceEnvironment TrackEnv()
+    {
+        foreach (var (id, e) in Game.Races) if (id == _trackId) return e;
+        return Game.Races.Count > 0 ? Game.Races[0].Env : new RaceEnvironment();
+    }
+    string TerrainOf(string trackId)
+    {
+        foreach (var (id, e) in Game.Races) if (id == trackId) return e.Terrain;
+        return "grass";
     }
 
     void SelectHamster(int i)
     {
         _meIndex = i;
-        _deck.Clear();
+        ClearDeck();
+        var sk = Game.Hamsters[i].Skills;
+        _skillId = sk.Count > 0 ? sk[0] : "";
     }
 
-    void ToggleCard(string id)
+    IEnumerable<Card> CardsForSlot(string slotKey)
     {
-        if (_deck.Contains(id)) _deck.Remove(id);
-        else if (_deck.Count < 6) _deck.Add(id);
+        string type = slotKey is "func1" or "func2" ? "function" : slotKey;
+        string? other = slotKey == "func1" ? _slots["func2"] : slotKey == "func2" ? _slots["func1"] : null;
+        return Game.Cards.Values.Where(c => c.Slot == type && (other is null || c.Id != other));
+    }
+
+    void PickCard(string slotKey, string cardId)
+        => _slots[slotKey] = _slots[slotKey] == cardId ? null : cardId;
+
+    int DeckCount() => _slots.Values.Count(v => v is not null);
+    List<string> Deck() => _slots.Values.Where(v => v is not null).Select(v => v!).ToList();
+
+    void ClearDeck()
+    {
+        foreach (var k in _slots.Keys.ToList()) _slots[k] = null;
     }
 
     void UseDefault()
     {
-        _deck.Clear();
-        _deck.AddRange(Game.Hamsters[_meIndex].Deck);
+        ClearDeck();
+        int f = 1;
+        foreach (var cid in Game.Hamsters[_meIndex].Deck)
+        {
+            if (!Game.Cards.TryGetValue(cid, out var c)) continue;
+            if (c.Slot == "function") { if (f <= 2) _slots["func" + f++] = cid; }
+            else if (_slots.ContainsKey(c.Slot) && _slots[c.Slot] is null) _slots[c.Slot] = cid;
+        }
     }
 
-    void BackToConfig() { _phase = Phase.Config; _deck.Clear(); }
-    void BackToDeck() { _phase = Phase.Config; }
+    void SetTrigger(Trig t) { _trig = t; _trigLabel = t.Label; }
+    void BackToConfig() => _phase = Phase.Config;
 
     async Task StartRace()
     {
-        var deck = _deck.Count > 0 ? _deck.ToList() : Game.Hamsters[_meIndex].Deck.ToList();
+        var deck = Deck();
+        if (deck.Count == 0) return;
+        if (string.IsNullOrEmpty(_skillId)) _skillId = Game.Hamsters[_meIndex].Skills.FirstOrDefault() ?? "";
         ulong seed = unchecked((ulong)(Random.Shared.NextInt64() ^ DateTime.Now.Ticks));
-        _result = Game.Simulate(_meIndex, deck, seed);
+        _result = Game.Simulate(_meIndex, _trackId, deck, _skillId, _trig.T, _trig.V, seed);
         _phase = Phase.Racing;
         _frame = 0;
         _currentEvent = "比賽開始！";
@@ -223,6 +311,12 @@
         return string.Join(" ", p);
     }
 
+    string SkillEffect(Skill s)
+    {
+        if (s.HpRecover > 0 || s.MpRecover > 0) return $"回HP{s.HpRecover}/MP{s.MpRecover} · 冷卻{s.CooldownSeconds:0}s";
+        return $"+{s.SpeedBonus:0.0}速 {s.DurationSeconds:0.0}s · 冷卻{s.CooldownSeconds:0}s · 耗{s.HpCost}/{s.MpCost}";
+    }
+
     string FmtTime(double t) => double.IsInfinity(t) ? "未完賽" : $"{t:0.0}s";
 
     string Affinities(Hamster h)
@@ -245,10 +339,7 @@
     string Forecast(IReadOnlyDictionary<string, double> f, Func<string, string> n)
         => string.Join(" / ", f.OrderByDescending(x => x.Value).Select(x => $"{n(x.Key)} {x.Value * 100:0}%"));
 
-    string PhaseName(RacePhase p) => p switch
-    { RacePhase.Start => "起跑", RacePhase.Early => "初期", RacePhase.Mid => "中期", RacePhase.Sprint => "衝刺", RacePhase.Whole => "全程", _ => "?" };
     string Terrain(string k) => k switch { "track" => "運動場", "grass" => "草地", "asphalt" => "柏油", _ => k };
     string WeatherName(string k) => k switch { "normal" => "一般", "sunny" => "大晴天", "rain" => "大雨", _ => k };
     string WindName(string k) => k switch { "none" => "無風", "tail" => "順風", "head" => "逆風", _ => k };
-    string TimeName(string k) => k switch { "morning" => "晨間", "day" => "白天", "evening" => "傍晚", "night" => "夜間", _ => k };
 }
