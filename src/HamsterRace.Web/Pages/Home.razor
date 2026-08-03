@@ -30,7 +30,7 @@
                     <button class="hamster-card @(idx == _meIndex ? "sel" : "")" @onclick="() => SelectHamster(idx)">
                         <div class="hc-emoji">🐹</div>
                         <div class="hc-name">@h.Name</div>
-                        <div class="hc-stat">速@h.BaseSpeed.ToString("0.0") · HP@h.MaxHp · MP@h.MaxMp</div>
+                        <div class="hc-stat">@($"速 {h.BaseSpeed:0.0} · HP {h.MaxHp} · MP {h.MaxMp}")</div>
                         <div class="hc-aff">@Affinities(h)</div>
                     </button>
                 }
@@ -73,7 +73,7 @@
             <div class="race-banner">
                 <span>🌦️ @WeatherName(_result!.ActualWeather)</span>
                 <span>🌬️ @WindName(_result.ActualWind)</span>
-                <span class="clock">@CurrentTime.ToString("0.0")s</span>
+                <span class="clock">@($"{CurrentTime:0.0}")s</span>
             </div>
 
             <div class="track">
@@ -104,7 +104,7 @@
                                 <span class="rk">@r.Rank</span>
                                 <span class="rn">@r.Name @(r.HamsterId == Game.Hamsters[_meIndex].Id ? "⭐" : "")</span>
                                 <span class="rt">@FmtTime(r.FinishTimeSeconds)</span>
-                                <span class="rd">剩HP @r.RemainingHp.ToString("0")｜出牌@r.CardsFired@(r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "")｜技@r.SkillsFired</span>
+                                <span class="rd">@($"剩HP {r.RemainingHp:0}｜出牌{r.CardsFired}")@(r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "")@($"｜技{r.SkillsFired}")</span>
                             </li>
                         }
                     </ol>
