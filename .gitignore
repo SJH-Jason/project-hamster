@@ -9,3 +9,6 @@ obj/
 
 # macOS
 .DS_Store
+
+# Pages publish output
+publish/
