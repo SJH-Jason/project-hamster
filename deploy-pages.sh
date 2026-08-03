@@ -8,6 +8,8 @@ export DOTNET_ROOT="/opt/homebrew/opt/dotnet/libexec"
 export PATH="$PATH:/opt/homebrew/opt/dotnet/libexec"
 cd "$(dirname "$0")"
 
+# 同步最新 data 進 wwwroot(避免用到舊副本)
+cp data/*.json src/HamsterRace.Web/wwwroot/data/ 2>/dev/null
 rm -rf publish
 dotnet publish src/HamsterRace.Web -c Release -o publish --nologo
 
