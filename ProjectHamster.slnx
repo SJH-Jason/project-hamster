@@ -3,6 +3,7 @@
     <Project Path="src/HamsterRace.Console/HamsterRace.Console.csproj" />
     <Project Path="src/HamsterRace.Domain/HamsterRace.Domain.csproj" />
     <Project Path="src/HamsterRace.Simulation/HamsterRace.Simulation.csproj" />
+    <Project Path="src/HamsterRace.Web/HamsterRace.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/HamsterRace.Simulation.Tests/HamsterRace.Simulation.Tests.csproj" />

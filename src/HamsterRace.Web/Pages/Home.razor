@@ -1,0 +1,254 @@
+@page "/"
+@using HamsterRace.Domain
+@inject GameData Game
+
+<div class="wrap">
+    <header class="hd">
+        <h1>🐹 鼠鼠競賽</h1>
+        <span class="sub">Project Hamster · 教練模式</span>
+    </header>
+
+    @if (!Game.Loaded)
+    {
+        <p class="loading">載入中… 🎐</p>
+    }
+    else if (_phase == Phase.Config)
+    {
+        <section class="intel">
+            <div class="intel-line">🏟️ @Terrain(Game.Env.Terrain)賽道 · @TimeName(Game.Env.TimeOfDay) · 100 公尺</div>
+            <div class="intel-line">🌦️ 天氣預報：@Forecast(Game.Env.WeatherForecast, WeatherName)</div>
+            <div class="intel-line">🌬️ 風向預報：@Forecast(Game.Env.WindForecast, WindName)</div>
+            <div class="intel-hint">實際天氣鎖牌後才抽 → 要不要押天氣自己賭 🎲</div>
+        </section>
+
+        <section class="pick">
+            <h2>① 選你要指導的鼠鼠</h2>
+            <div class="hamster-row">
+                @for (int i = 0; i < Game.Hamsters.Count; i++)
+                {
+                    var idx = i; var h = Game.Hamsters[i];
+                    <button class="hamster-card @(idx == _meIndex ? "sel" : "")" @onclick="() => SelectHamster(idx)">
+                        <div class="hc-emoji">🐹</div>
+                        <div class="hc-name">@h.Name</div>
+                        <div class="hc-stat">速@h.BaseSpeed.ToString("0.0") · HP@h.MaxHp · MP@h.MaxMp</div>
+                        <div class="hc-aff">@Affinities(h)</div>
+                    </button>
+                }
+            </div>
+        </section>
+
+        <section class="pick">
+            <h2>② 配 6 張牌 <span class="count @(_deck.Count == 6 ? "ok" : "")">@_deck.Count / 6</span></h2>
+            <div class="card-grid">
+                @foreach (var c in Game.Cards.Values)
+                {
+                    var id = c.Id; var on = _deck.Contains(id);
+                    <button class="game-card @(on ? "on" : "") @(!on && _deck.Count >= 6 ? "dim" : "")"
+                            @onclick="() => ToggleCard(id)">
+                        <div class="gc-top"><span class="gc-phase">@PhaseName(c.Phase)</span><span class="gc-name">@c.Name</span></div>
+                        <div class="gc-eff">@CardEffect(c)</div>
+                        @if (c.ConditionType is not null)
+                        {
+                            <div class="gc-bet">🎲 押@CondName(c)</div>
+                        }
+                    </button>
+                }
+            </div>
+            <div class="deck-actions">
+                <button class="ghost" @onclick="UseDefault">用這隻鼠的預設牌組</button>
+                @if (_deck.Count > 0)
+                {
+                    <button class="ghost" @onclick="() => _deck.Clear()">清空</button>
+                }
+            </div>
+        </section>
+
+        <button class="start" disabled="@(_deck.Count == 0)" @onclick="StartRace">
+            🏁 開賽！@(_deck.Count == 0 ? "（先選牌或用預設）" : "")
+        </button>
+    }
+    else
+    {
+        <section class="race">
+            <div class="race-banner">
+                <span>🌦️ @WeatherName(_result!.ActualWeather)</span>
+                <span>🌬️ @WindName(_result.ActualWind)</span>
+                <span class="clock">@CurrentTime.ToString("0.0")s</span>
+            </div>
+
+            <div class="track">
+                @for (int i = 0; i < _result.Replay!.HamsterNames.Count; i++)
+                {
+                    var pct = LanePct(i);
+                    var isMe = i == _meIndex;
+                    <div class="lane">
+                        <div class="lane-name @(isMe ? "me" : "")">@_result.Replay.HamsterNames[i]@(isMe ? " ⭐" : "")</div>
+                        <div class="lane-track">
+                            <div class="runner" style="left:calc(@pct% - 14px)">🐹</div>
+                            <div class="finish">🏁</div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="ticker">@_currentEvent</div>
+
+            @if (_phase == Phase.Result)
+            {
+                <div class="result">
+                    <h2>🏁 最終名次</h2>
+                    <ol class="standings">
+                        @foreach (var r in _result.Rankings)
+                        {
+                            <li class="@(r.HamsterId == Game.Hamsters[_meIndex].Id ? "me" : "")">
+                                <span class="rk">@r.Rank</span>
+                                <span class="rn">@r.Name @(r.HamsterId == Game.Hamsters[_meIndex].Id ? "⭐" : "")</span>
+                                <span class="rt">@FmtTime(r.FinishTimeSeconds)</span>
+                                <span class="rd">剩HP @r.RemainingHp.ToString("0")｜出牌@r.CardsFired@(r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "")｜技@r.SkillsFired</span>
+                            </li>
+                        }
+                    </ol>
+                    <div class="myline">@MyResultLine()</div>
+                    <div class="again">
+                        <button class="start" @onclick="StartRace">🔁 同鼠同牌·再抽天氣</button>
+                        <button class="ghost" @onclick="BackToDeck">♻️ 重配牌組</button>
+                        <button class="ghost" @onclick="BackToConfig">🐹 換鼠</button>
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    <footer class="ft">聆音 × 卡凡 · 確定性引擎 C#/.NET</footer>
+</div>
+
+@code {
+    enum Phase { Config, Racing, Result }
+    Phase _phase = Phase.Config;
+
+    int _meIndex = 0;
+    readonly List<string> _deck = new();
+    RaceResult? _result;
+    int _frame;
+    string _currentEvent = "";
+
+    double CurrentTime => _result?.Replay is { Frames.Count: > 0 } rp
+        ? rp.Frames[Math.Min(_frame, rp.Frames.Count - 1)].T : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Game.EnsureLoadedAsync();
+        SelectHamster(0);
+    }
+
+    void SelectHamster(int i)
+    {
+        _meIndex = i;
+        _deck.Clear();
+    }
+
+    void ToggleCard(string id)
+    {
+        if (_deck.Contains(id)) _deck.Remove(id);
+        else if (_deck.Count < 6) _deck.Add(id);
+    }
+
+    void UseDefault()
+    {
+        _deck.Clear();
+        _deck.AddRange(Game.Hamsters[_meIndex].Deck);
+    }
+
+    void BackToConfig() { _phase = Phase.Config; _deck.Clear(); }
+    void BackToDeck() { _phase = Phase.Config; }
+
+    async Task StartRace()
+    {
+        var deck = _deck.Count > 0 ? _deck.ToList() : Game.Hamsters[_meIndex].Deck.ToList();
+        ulong seed = unchecked((ulong)(Random.Shared.NextInt64() ^ DateTime.Now.Ticks));
+        _result = Game.Simulate(_meIndex, deck, seed);
+        _phase = Phase.Racing;
+        _frame = 0;
+        _currentEvent = "比賽開始！";
+        StateHasChanged();
+        await PlayAsync();
+    }
+
+    async Task PlayAsync()
+    {
+        var rp = _result!.Replay!;
+        var events = _result.Events;
+        int evIdx = 0;
+        int stepMs = Math.Clamp(7000 / Math.Max(1, rp.Frames.Count), 12, 60);
+        for (_frame = 0; _frame < rp.Frames.Count; _frame++)
+        {
+            double t = rp.Frames[_frame].T;
+            while (evIdx < events.Count && events[evIdx].TimeSeconds <= t)
+            {
+                if (events[evIdx].HamsterId != "-") _currentEvent = events[evIdx].Message;
+                evIdx++;
+            }
+            StateHasChanged();
+            await Task.Delay(stepMs);
+        }
+        _frame = rp.Frames.Count - 1;
+        _phase = Phase.Result;
+        _currentEvent = "衝線！";
+        StateHasChanged();
+    }
+
+    double LanePct(int i)
+    {
+        var rp = _result!.Replay!;
+        if (rp.Frames.Count == 0) return 0;
+        double d = rp.Frames[Math.Min(_frame, rp.Frames.Count - 1)].Distances[i];
+        return Math.Clamp(d / rp.DistanceMeters * 100.0, 0, 100);
+    }
+
+    string MyResultLine()
+    {
+        var me = _result!.Rankings.First(r => r.HamsterId == Game.Hamsters[_meIndex].Id);
+        return me.Rank == 1
+            ? $"🏆 你的 {me.Name} 拿下第 1 名！配牌成功！"
+            : $"你的 {me.Name} 這場第 {me.Rank} 名——換個配牌或賭賭天氣再來？";
+    }
+
+    string CardEffect(Card c)
+    {
+        var p = new List<string>();
+        if (c.SpeedBonus != 0) p.Add($"+{c.SpeedBonus:0.0}速");
+        if (c.HpRecover > 0 || c.MpRecover > 0) p.Add($"回HP{c.HpRecover}/MP{c.MpRecover}");
+        if (c.DrainMultiplier != 1.0) p.Add($"省耗×{c.DrainMultiplier:0.0}");
+        if (c.HpCost > 0 || c.MpCost > 0) p.Add($"耗{c.HpCost}/{c.MpCost}");
+        return string.Join(" ", p);
+    }
+
+    string FmtTime(double t) => double.IsInfinity(t) ? "未完賽" : $"{t:0.0}s";
+
+    string Affinities(Hamster h)
+    {
+        var l = new List<string>();
+        foreach (var (k, v) in h.WeatherAffinity) if (v > 1.0) l.Add(WeatherName(k));
+        foreach (var (k, v) in h.WindAffinity) if (v > 1.0) l.Add(WindName(k));
+        foreach (var (k, v) in h.TerrainAffinity) if (v > 1.0) l.Add(Terrain(k));
+        return l.Count > 0 ? "擅長 " + string.Join("/", l) : "無明顯弱點";
+    }
+
+    string CondName(Card c) => c.ConditionType switch
+    {
+        "weather" => WeatherName(c.ConditionValue ?? ""),
+        "wind" => WindName(c.ConditionValue ?? ""),
+        "terrain" => Terrain(c.ConditionValue ?? ""),
+        _ => c.ConditionValue ?? ""
+    };
+
+    string Forecast(IReadOnlyDictionary<string, double> f, Func<string, string> n)
+        => string.Join(" / ", f.OrderByDescending(x => x.Value).Select(x => $"{n(x.Key)} {x.Value * 100:0}%"));
+
+    string PhaseName(RacePhase p) => p switch
+    { RacePhase.Start => "起跑", RacePhase.Early => "初期", RacePhase.Mid => "中期", RacePhase.Sprint => "衝刺", RacePhase.Whole => "全程", _ => "?" };
+    string Terrain(string k) => k switch { "track" => "運動場", "grass" => "草地", "asphalt" => "柏油", _ => k };
+    string WeatherName(string k) => k switch { "normal" => "一般", "sunny" => "大晴天", "rain" => "大雨", _ => k };
+    string WindName(string k) => k switch { "none" => "無風", "tail" => "順風", "head" => "逆風", _ => k };
+    string TimeName(string k) => k switch { "morning" => "晨間", "day" => "白天", "evening" => "傍晚", "night" => "夜間", _ => k };
+}

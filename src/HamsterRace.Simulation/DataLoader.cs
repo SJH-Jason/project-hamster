@@ -33,10 +33,12 @@ public static class DataLoader
         public double Intimacy { get; set; } = 0.9;
     }
 
-    public static IReadOnlyList<Hamster> LoadHamsters(string path)
+    public static IReadOnlyList<Hamster> LoadHamsters(string path) => ParseHamsters(File.ReadAllText(path));
+
+    public static IReadOnlyList<Hamster> ParseHamsters(string json)
     {
-        var file = JsonSerializer.Deserialize<HamsterFile>(File.ReadAllText(path), Options)
-                   ?? throw new InvalidDataException($"無法解析鼠鼠資料檔:{path}");
+        var file = JsonSerializer.Deserialize<HamsterFile>(json, Options)
+                   ?? throw new InvalidDataException("無法解析鼠鼠資料");
 
         return file.Hamsters.Select(d => new Hamster
         {
@@ -77,10 +79,12 @@ public static class DataLoader
         public string? ConditionValue { get; set; }
     }
 
-    public static IReadOnlyDictionary<string, Card> LoadCards(string path)
+    public static IReadOnlyDictionary<string, Card> LoadCards(string path) => ParseCards(File.ReadAllText(path));
+
+    public static IReadOnlyDictionary<string, Card> ParseCards(string json)
     {
-        var file = JsonSerializer.Deserialize<CardFile>(File.ReadAllText(path), Options)
-                   ?? throw new InvalidDataException($"無法解析卡牌資料檔:{path}");
+        var file = JsonSerializer.Deserialize<CardFile>(json, Options)
+                   ?? throw new InvalidDataException("無法解析卡牌資料");
 
         return file.Cards.ToDictionary(d => d.Id, d => new Card
         {
@@ -113,10 +117,11 @@ public static class DataLoader
         public double MidPhaseEnd { get; set; } = 0.70;
     }
 
-    public static RaceRules LoadRules(string path)
+    public static RaceRules LoadRules(string path) => ParseRules(File.ReadAllText(path));
+
+    public static RaceRules ParseRules(string json)
     {
-        var d = JsonSerializer.Deserialize<RulesDto>(File.ReadAllText(path), Options)
-                ?? new RulesDto();
+        var d = JsonSerializer.Deserialize<RulesDto>(json, Options) ?? new RulesDto();
         return new RaceRules
         {
             ResourceFloor = d.ResourceFloor,
@@ -160,10 +165,12 @@ public static class DataLoader
         public int MpRecover { get; set; }
     }
 
-    public static IReadOnlyDictionary<string, Skill> LoadSkills(string path)
+    public static IReadOnlyDictionary<string, Skill> LoadSkills(string path) => ParseSkills(File.ReadAllText(path));
+
+    public static IReadOnlyDictionary<string, Skill> ParseSkills(string json)
     {
-        var file = JsonSerializer.Deserialize<SkillFile>(File.ReadAllText(path), Options)
-                   ?? throw new InvalidDataException($"無法解析技能資料檔:{path}");
+        var file = JsonSerializer.Deserialize<SkillFile>(json, Options)
+                   ?? throw new InvalidDataException("無法解析技能資料");
         return file.Skills.ToDictionary(d => d.Id, d => new Skill
         {
             Id = d.Id,
@@ -182,9 +189,12 @@ public static class DataLoader
 
     /// <summary>載入賽事環境;raceId 為 null 時取第一筆。</summary>
     public static RaceEnvironment LoadEnvironment(string path, string? raceId = null)
+        => ParseEnvironment(File.ReadAllText(path), raceId);
+
+    public static RaceEnvironment ParseEnvironment(string json, string? raceId = null)
     {
-        var file = JsonSerializer.Deserialize<RaceFile>(File.ReadAllText(path), Options)
-                   ?? throw new InvalidDataException($"無法解析賽事資料檔:{path}");
+        var file = JsonSerializer.Deserialize<RaceFile>(json, Options)
+                   ?? throw new InvalidDataException("無法解析賽事資料");
         var dto = (raceId is null ? file.Races.FirstOrDefault()
                                   : file.Races.FirstOrDefault(r => r.Id == raceId))
                   ?? throw new InvalidDataException($"賽事找不到:{raceId}");

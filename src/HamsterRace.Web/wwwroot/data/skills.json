@@ -1,0 +1,10 @@
+{
+  "_comment": "Stage 4 技能型錄。trigger:Periodic(冷卻好就放)/RemainingM(剩餘≤triggerValue公尺)/HpBelow(HP<triggerValue×上限)/RankBehind(非第一)。有冷卻可重複發動。親密度成功率、熟練度效果先固定。",
+  "skills": [
+    { "id": "dash_burst",   "name": "短衝",     "trigger": "Periodic",   "speedBonus": 1.5, "durationSeconds": 1.2, "cooldownSeconds": 4.0, "hpCost": 6, "mpCost": 3 },
+    { "id": "last_spurt",   "name": "最後衝刺", "trigger": "RemainingM", "triggerValue": 20, "speedBonus": 3.0, "durationSeconds": 2.5, "cooldownSeconds": 99, "hpCost": 15, "mpCost": 8 },
+    { "id": "comeback",     "name": "逆境突進", "trigger": "RankBehind", "speedBonus": 2.0, "durationSeconds": 2.0, "cooldownSeconds": 6.0, "mpCost": 10 },
+    { "id": "steady_breath","name": "穩定呼吸", "trigger": "HpBelow",    "triggerValue": 0.35, "hpRecover": 20, "durationSeconds": 0.1, "cooldownSeconds": 8.0, "mpCost": 6 },
+    { "id": "wind_read",    "name": "讀風",     "trigger": "Periodic",   "speedBonus": 1.0, "durationSeconds": 1.5, "cooldownSeconds": 5.0, "mpCost": 4 }
+  ]
+}

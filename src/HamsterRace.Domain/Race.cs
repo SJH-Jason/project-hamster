@@ -103,6 +103,18 @@ public sealed record HamsterResult
     public int SkillsFailed { get; init; }
 }
 
+/// <summary>2D 動畫用的一格畫面:某時間點各鼠的已跑距離（依參賽順序）。</summary>
+public sealed record ReplayFrame(double T, IReadOnlyList<double> Distances);
+
+/// <summary>整場的位置時間軸,給前端動畫播放。</summary>
+public sealed record RaceReplay
+{
+    public required double DistanceMeters { get; init; }
+    public required IReadOnlyList<string> HamsterIds { get; init; }
+    public required IReadOnlyList<string> HamsterNames { get; init; }
+    public required IReadOnlyList<ReplayFrame> Frames { get; init; }
+}
+
 /// <summary>一整場比賽的結果。</summary>
 public sealed record RaceResult
 {
@@ -111,6 +123,9 @@ public sealed record RaceResult
     public required double DistanceMeters { get; init; }
     public required IReadOnlyList<HamsterResult> Rankings { get; init; }
     public required IReadOnlyList<RaceEvent> Events { get; init; }
+
+    /// <summary>2D 動畫重播（只有要求時才產生,batch 不需要）。</summary>
+    public RaceReplay? Replay { get; init; }
 
     // Stage 3:實際抽出的環境（供戰報顯示「預報 vs 實際」）
     public string Terrain { get; init; } = "";

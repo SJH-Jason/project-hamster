@@ -43,10 +43,12 @@ public sealed class RaceSimulator
         public int SkillsFailed { get; set; }
     }
 
-    public RaceResult Run(RaceConfig config)
+    public RaceResult Run(RaceConfig config, bool recordReplay = false)
     {
         if (config.Hamsters.Count == 0)
             throw new ArgumentException("至少要有一隻鼠鼠參賽");
+
+        var frames = recordReplay ? new List<ReplayFrame>() : null;
 
         var rng = new DeterministicRng(config.Seed);
         var events = new List<RaceEvent>();
@@ -150,6 +152,11 @@ public sealed class RaceSimulator
                         $"（剩餘 HP {r.Hp:0}／MP {r.Mp:0}）。"));
                 }
             }
+
+            // 記一格重播畫面（給 2D 動畫）:每隻鼠當前位置,封頂在終點。
+            frames?.Add(new ReplayFrame(
+                Math.Round(t, 2),
+                runners.Select(r => Math.Round(Math.Min(r.Distance, config.DistanceMeters), 3)).ToList()));
         }
 
         var unfinished = runners.Where(r => !r.Finished)
@@ -191,6 +198,13 @@ public sealed class RaceSimulator
             TimeOfDay = env.TimeOfDay,
             ActualWeather = actualWeather,
             ActualWind = actualWind,
+            Replay = frames is null ? null : new RaceReplay
+            {
+                DistanceMeters = config.DistanceMeters,
+                HamsterIds = runners.Select(r => r.Hamster.Id).ToList(),
+                HamsterNames = runners.Select(r => r.Hamster.Name).ToList(),
+                Frames = frames,
+            },
         };
     }
 
