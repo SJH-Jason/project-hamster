@@ -2,11 +2,11 @@ using HamsterRace.Domain;
 using HamsterRace.Simulation;
 
 // CLI:
+//   互動:  dotnet run --project src/HamsterRace.Console -- play       ← 手動組牌玩
 //   單場:  dotnet run --project src/HamsterRace.Console -- [seed] [distance] [hamstersFile]
 //   批次:  dotnet run --project src/HamsterRace.Console -- batch [場數] [distance] [hamstersFile]
-//   例:    dotnet run --project src/HamsterRace.Console -- 42 100
-//          dotnet run --project src/HamsterRace.Console -- batch 10000 100
 
+bool playMode = args.Length > 0 && args[0].Equals("play", StringComparison.OrdinalIgnoreCase);
 bool batchMode = args.Length > 0 && args[0].Equals("batch", StringComparison.OrdinalIgnoreCase);
 
 int races = batchMode && args.Length > 1 && int.TryParse(args[1], out var n) ? n : 10000;
@@ -34,7 +34,11 @@ var config = new RaceConfig
     Rules = rules,
 };
 
-if (batchMode)
+if (playMode)
+{
+    new HamsterRace.Console.InteractiveGame(hamsters, cards, skills, environment, rules, distance).Run();
+}
+else if (batchMode)
 {
     var rep = new BatchSimulator().Run(config, races);
     Console.WriteLine(BatchSimulator.Render(rep));
