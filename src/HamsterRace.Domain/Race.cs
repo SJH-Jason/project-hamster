@@ -26,6 +26,22 @@ public sealed record RaceRules
     public double EarlyPhaseEnd { get; init; } = 0.40;
     public double MidPhaseEnd { get; init; } = 0.70;
     // 之後（>MidPhaseEnd）即衝刺段
+
+    // --- 賽場隨機事件（卡凡 2026-08-04）---
+    /// <summary>每 20m 判定跌倒的機率;跌倒後停住的秒數。</summary>
+    public double TripChance { get; init; } = 0.05;
+    public double TripStunSeconds { get; init; } = 1.0;
+    /// <summary>每 10m 判定偷吃零食的機率、回復量、每場上限。</summary>
+    public double SnackChance { get; init; } = 0.10;
+    public int SnackHp { get; init; } = 20;
+    public int SnackMp { get; init; } = 20;
+    public int SnackMaxPerRace { get; init; } = 2;
+    /// <summary>開場判定「得心應手」機率;每秒累加的速度。</summary>
+    public double FlowChance { get; init; } = 0.10;
+    public double FlowSpeedPerSec { get; init; } = 0.2;
+    /// <summary>最後 20m 判定「熱血沸騰」機率;加的速度(m/s)。</summary>
+    public double FiredUpChance { get; init; } = 0.10;
+    public double FiredUpSpeed { get; init; } = 1.5;
 }
 
 /// <summary>

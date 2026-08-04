@@ -41,6 +41,14 @@ public sealed class RaceSimulator
         public int CurrentRank { get; set; } = 1;
         public int SkillsFired { get; set; }
         public int SkillsFailed { get; set; }
+        // 隨機事件狀態
+        public double StunUntil { get; set; }
+        public int SnackCount { get; set; }
+        public bool HasFlow { get; set; }
+        public bool HasFiredUp { get; set; }
+        public int LastMark10 { get; set; }
+        public int LastMark20 { get; set; }
+        public bool FiredUpRolled { get; set; }
     }
 
     public RaceResult Run(RaceConfig config, bool recordReplay = false)
@@ -84,6 +92,17 @@ public sealed class RaceSimulator
             $"實際天氣:{WeatherName(actualWeather)} · 風向:{WindName(actualWind)}" +
             $"（預報中抽出）。"));
 
+        // 開場判定「得心應手」（每隻各擲一次）
+        foreach (var r in runners)
+        {
+            if (r.Rng.NextDouble() < config.Rules.FlowChance)
+            {
+                r.HasFlow = true;
+                events.Add(new RaceEvent(0.0, r.Hamster.Id,
+                    $"{r.Hamster.Name} 開賽狀態絕佳,得心應手！（每秒加速）✨"));
+            }
+        }
+
         double t = 0.0;
         int finishedCount = 0;
         int rankCounter = 0;
@@ -114,13 +133,18 @@ public sealed class RaceSimulator
                 // 2) 移除過期效果
                 r.Active.RemoveAll(e => !e.WholeRace && t >= e.EndTime);
 
-                // 3) 算速度:( 基礎 + 卡加成 + 波動 ) × 資源折扣
-                //    用「本 tick 起始的 HP/MP 狀態」決定速度,再依跑出的距離扣消耗。
+                // 2.5) 賽場隨機事件（偷吃零食/跌倒/熱血沸騰;得心應手已在開賽擲）
+                ProcessRandomEvents(r, t, config, events);
+
+                // 3) 算速度:( 基礎 + 卡加成 + 事件加成 + 波動 ) × 資源折扣;跌倒中速度為 0
                 double cardBonus = r.Active.Sum(e => e.SpeedBonus);
+                double eventBonus = (r.HasFlow ? config.Rules.FlowSpeedPerSec * t : 0.0)
+                                  + (r.HasFiredUp ? config.Rules.FiredUpSpeed : 0.0);
                 double jitter = r.Hamster.SpeedJitter > 0
                     ? r.Rng.NextRange(-r.Hamster.SpeedJitter, r.Hamster.SpeedJitter) : 0.0;
                 double resourceMult = ResourceMultiplier(r, config.Rules);
-                double speed = (r.Hamster.BaseSpeed + cardBonus + jitter) * resourceMult * r.EnvMult;
+                double speed = t < r.StunUntil ? 0.0
+                    : (r.Hamster.BaseSpeed + cardBonus + eventBonus + jitter) * resourceMult * r.EnvMult;
                 if (speed < 0) speed = 0;
 
                 // 4) 前進
@@ -371,6 +395,53 @@ public sealed class RaceSimulator
                 : $"+{skill.SpeedBonus:0.0} m/s";
             events.Add(new RaceEvent(t, r.Hamster.Id,
                 $"{r.Hamster.Name} 發動技能「{skill.Name}」判定成功（{detail}）。"));
+        }
+    }
+
+    /// <summary>賽場隨機事件:每 10m 偷吃零食、每 20m 跌倒、最後 20m 熱血沸騰（卡凡 2026-08-04）。</summary>
+    private static void ProcessRandomEvents(Runner r, double t, RaceConfig config, List<RaceEvent> events)
+    {
+        var rules = config.Rules;
+
+        // 每 10m 偷吃零食（每場上限 SnackMaxPerRace）
+        int m10 = (int)(r.Distance / 10.0);
+        while (r.LastMark10 < m10)
+        {
+            r.LastMark10++;
+            if (r.LastMark10 is >= 1 and <= 9 && r.SnackCount < rules.SnackMaxPerRace
+                && r.Rng.NextDouble() < rules.SnackChance)
+            {
+                r.SnackCount++;
+                r.Hp = Math.Min(r.Hamster.MaxHp, r.Hp + rules.SnackHp);
+                r.Mp = Math.Min(r.Hamster.MaxMp, r.Mp + rules.SnackMp);
+                events.Add(new RaceEvent(t, r.Hamster.Id,
+                    $"{r.Hamster.Name} 偷吃零食！回復 HP{rules.SnackHp}／MP{rules.SnackMp} 🍪"));
+            }
+        }
+
+        // 每 20m 跌倒（停住 TripStunSeconds 秒）
+        int m20 = (int)(r.Distance / 20.0);
+        while (r.LastMark20 < m20)
+        {
+            r.LastMark20++;
+            if (r.LastMark20 is >= 1 and <= 4 && r.Rng.NextDouble() < rules.TripChance)
+            {
+                r.StunUntil = t + rules.TripStunSeconds;
+                events.Add(new RaceEvent(t, r.Hamster.Id,
+                    $"{r.Hamster.Name} 跌倒了！停住 {rules.TripStunSeconds:0} 秒 💫"));
+            }
+        }
+
+        // 最後 20m 熱血沸騰（整場擲一次）
+        if (!r.FiredUpRolled && r.Distance >= config.DistanceMeters - 20)
+        {
+            r.FiredUpRolled = true;
+            if (r.Rng.NextDouble() < rules.FiredUpChance)
+            {
+                r.HasFiredUp = true;
+                events.Add(new RaceEvent(t, r.Hamster.Id,
+                    $"{r.Hamster.Name} 熱血沸騰！速度 +{rules.FiredUpSpeed:0.0} 🔥"));
+            }
         }
     }
 

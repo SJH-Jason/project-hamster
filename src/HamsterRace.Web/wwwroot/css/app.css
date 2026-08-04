@@ -162,3 +162,17 @@ body {
 .sk-eff { color: var(--muted); font-size: .68rem; margin-top: 3px; }
 .trig-label { margin: 10px 0 5px; font-size: .82rem; color: var(--muted); }
 .trig-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ---- v3: cost preview / report / error / snack ---- */
+.cost-preview {
+  background: var(--panel); border: 1px solid #3a2e56; border-radius: 10px;
+  padding: 8px 12px; font-size: .82rem; margin-bottom: 10px;
+}
+.cost-preview b { color: var(--accent); }
+.cost-note { display: block; color: var(--muted); font-size: .68rem; margin-top: 2px; }
+.err { background: #4a1f2e; border: 1px solid #a03e5e; color: #ffb3c8; border-radius: 10px; padding: 10px 12px; margin: 8px 0; font-size: .85rem; }
+.report { margin-top: 18px; background: var(--panel); border: 1px solid #3a2e56; border-radius: 12px; padding: 10px 14px; }
+.report summary { cursor: pointer; font-weight: 700; color: var(--accent2); }
+.report-log { margin-top: 10px; max-height: 320px; overflow-y: auto; font-size: .8rem; line-height: 1.6; }
+.rl-line { color: var(--text); }
+.rl-t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 4px; }

@@ -50,6 +50,10 @@
 
         <section class="pick">
             <h2>③ 配牌（6 槽）<span class="count @(DeckCount() == 6 ? "ok" : "")">@DeckCount() / 6</span></h2>
+            <div class="cost-preview">
+                🔋 本套牌消耗預估：<b>HP @DeckCost().Hp</b> ／ <b>MP @DeckCost().Mp</b>
+                <span class="cost-note">（另有基礎體力消耗：每 10m 約 5 HP＋5 MP）</span>
+            </div>
             @foreach (var (key, label) in Slots)
             {
                 var slotKey = key;
@@ -95,6 +99,10 @@
             </div>
         </section>
 
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="err">⚠️ @_error</div>
+        }
         <button class="start" disabled="@(DeckCount() == 0)" @onclick="StartRace">
             🏁 開賽！@(DeckCount() == 0 ? "（至少放一張牌）" : "")
         </button>
@@ -137,7 +145,7 @@
                                 <span class="rk">@r.Rank</span>
                                 <span class="rn">@r.Name @(r.HamsterId == Game.Hamsters[_meIndex].Id ? "⭐" : "")</span>
                                 <span class="rt">@FmtTime(r.FinishTimeSeconds)</span>
-                                <span class="rd">@($"剩HP {r.RemainingHp:0}｜出牌{r.CardsFired}")@(r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "")@($"｜技{r.SkillsFired}")</span>
+                                <span class="rd">@($"剩HP {r.RemainingHp:0}／MP {r.RemainingMp:0}｜出牌{r.CardsFired}")@(r.CardsFizzled > 0 ? $"(啞{r.CardsFizzled})" : "")@($"｜技{r.SkillsFired}")</span>
                             </li>
                         }
                     </ol>
@@ -146,6 +154,16 @@
                         <button class="start" @onclick="StartRace">🔁 同設定·再抽天氣</button>
                         <button class="ghost" @onclick="BackToConfig">⚙️ 回配置</button>
                     </div>
+
+                    <details class="report" open>
+                        <summary>📜 完整戰報（逐段實況）</summary>
+                        <div class="report-log">
+                            @foreach (var e in _result.Events)
+                            {
+                                <div class="rl-line"><span class="rl-t">@($"{e.TimeSeconds,5:0.0}s")</span> @e.Message</div>
+                            }
+                        </div>
+                    </details>
                 </div>
             }
         </section>
@@ -248,13 +266,33 @@
     void SetTrigger(Trig t) { _trig = t; _trigLabel = t.Label; }
     void BackToConfig() => _phase = Phase.Config;
 
+    string _error = "";
+
+    (int Hp, int Mp) DeckCost()
+    {
+        int hp = 0, mp = 0;
+        foreach (var cid in Deck())
+            if (Game.Cards.TryGetValue(cid, out var c)) { hp += c.HpCost; mp += c.MpCost; }
+        return (hp, mp);
+    }
+
     async Task StartRace()
     {
+        _error = "";
         var deck = Deck();
         if (deck.Count == 0) return;
         if (string.IsNullOrEmpty(_skillId)) _skillId = Game.Hamsters[_meIndex].Skills.FirstOrDefault() ?? "";
-        ulong seed = unchecked((ulong)(Random.Shared.NextInt64() ^ DateTime.Now.Ticks));
-        _result = Game.Simulate(_meIndex, _trackId, deck, _skillId, _trig.T, _trig.V, seed);
+        try
+        {
+            ulong seed = unchecked((ulong)(Random.Shared.NextInt64() ^ DateTime.Now.Ticks));
+            _result = Game.Simulate(_meIndex, _trackId, deck, _skillId, _trig.T, _trig.V, seed);
+        }
+        catch (Exception ex)
+        {
+            _error = "跑比賽時出錯了：" + ex.Message;
+            StateHasChanged();
+            return;
+        }
         _phase = Phase.Racing;
         _frame = 0;
         _currentEvent = "比賽開始！";
