@@ -151,6 +151,7 @@
                     </ol>
                     <div class="myline">@MyResultLine()</div>
                     <div class="again">
+                        <button class="start" @onclick="ReplayRace">▶️ 重播這場</button>
                         <button class="start" @onclick="StartRace">🔁 同設定·再抽天氣</button>
                         <button class="ghost" @onclick="BackToConfig">⚙️ 回配置</button>
                     </div>
@@ -265,6 +266,16 @@
 
     void SetTrigger(Trig t) { _trig = t; _trigLabel = t.Label; }
     void BackToConfig() => _phase = Phase.Config;
+
+    async Task ReplayRace()
+    {
+        if (_result?.Replay is null) return;
+        _phase = Phase.Racing;
+        _frame = 0;
+        _currentEvent = "🔁 重播開始！";
+        StateHasChanged();
+        await PlayAsync();
+    }
 
     string _error = "";
 
