@@ -96,7 +96,7 @@ body {
   border-radius: 8px; border: 1px solid #3a2e56;
 }
 .runner {
-  position: absolute; top: 3px; font-size: 1.5rem; transition: left .06s linear;
+  position: absolute; top: 3px; font-size: 1.5rem; transition: left .13s linear;
   filter: drop-shadow(0 1px 1px #000);
 }
 .finish { position: absolute; right: 2px; top: 5px; font-size: 1.1rem; opacity: .8; }
@@ -176,3 +176,6 @@ body {
 .report-log { margin-top: 10px; max-height: 320px; overflow-y: auto; font-size: .8rem; line-height: 1.6; }
 .rl-line { color: var(--text); }
 .rl-t { color: var(--muted); font-variant-numeric: tabular-nums; margin-right: 4px; }
+
+/* 隱藏 Blazor 內部無害 transient banner(真錯誤由 ErrorBoundary 接) */
+#blazor-error-ui { display: none !important; }

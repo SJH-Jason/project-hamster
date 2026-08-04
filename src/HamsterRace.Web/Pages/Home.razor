@@ -8,6 +8,8 @@
         <span class="sub">Project Hamster · 教練模式</span>
     </header>
 
+    <ErrorBoundary @ref="_eb">
+    <ChildContent>
     @if (!Game.Loaded)
     {
         <p class="loading">載入中… 🎐</p>
@@ -170,6 +172,14 @@
         </section>
     }
 
+    </ChildContent>
+    <ErrorContent Context="ex">
+        <div class="err">😵 畫面出了個錯（我在抓原因）：<br /><b>@ex.GetType().Name</b>: @ex.Message
+            <br /><button class="ghost" @onclick="Recover">回配置重試</button>
+        </div>
+    </ErrorContent>
+    </ErrorBoundary>
+
     <footer class="ft">聆音 × 卡凡 · 確定性引擎 C#/.NET</footer>
 </div>
 
@@ -192,6 +202,9 @@
         new("落後時", SkillTrigger.RankBehind, 0),
         new("體力不支", SkillTrigger.HpBelow, 0.35),
     };
+
+    Microsoft.AspNetCore.Components.Web.ErrorBoundary? _eb;
+    void Recover() { _phase = Phase.Config; _eb?.Recover(); }
 
     string _trackId = "grass";
     int _meIndex = 0;
@@ -311,33 +324,40 @@
         await PlayAsync();
     }
 
+    bool _playing;
+
     async Task PlayAsync()
     {
+        if (_playing) return;            // 防重入,避免兩個動畫迴圈疊在一起
+        _playing = true;
         try
         {
             var rp = _result!.Replay!;
             var events = _result.Events;
+            int total = rp.Frames.Count;
+            int steps = Math.Min(total, 55);   // 降頻:最多 55 個視覺步(而非每幀),大幅降低 render 壓力
             int evIdx = 0;
-            int stepMs = Math.Clamp(7000 / Math.Max(1, rp.Frames.Count), 12, 60);
-            for (_frame = 0; _frame < rp.Frames.Count; _frame++)
+            for (int s = 1; s <= steps; s++)
             {
-                double t = rp.Frames[_frame].T;
+                _frame = (int)((long)s * (total - 1) / steps);
+                double t = rp.Frames[Math.Clamp(_frame, 0, total - 1)].T;
                 while (evIdx < events.Count && events[evIdx].TimeSeconds <= t)
                 {
                     if (events[evIdx].HamsterId != "-") _currentEvent = events[evIdx].Message;
                     evIdx++;
                 }
                 await InvokeAsync(StateHasChanged);
-                await Task.Delay(stepMs);
+                await Task.Delay(120);
             }
         }
-        catch { /* 動畫中的例外不致命,直接收在結果 */ }
+        catch { /* 動畫中的例外不致命 */ }
         finally
         {
             _frame = Math.Max(0, (_result?.Replay?.Frames.Count ?? 1) - 1);
             _phase = Phase.Result;
             _currentEvent = "衝線！";
-            await InvokeAsync(StateHasChanged);
+            _playing = false;
+            try { await InvokeAsync(StateHasChanged); } catch { }
         }
     }
 
