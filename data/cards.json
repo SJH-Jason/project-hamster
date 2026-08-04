@@ -1,0 +1,26 @@
+{
+  "_comment": "卡牌型錄。slot=配牌槽位(start/accel/mid/sprint/function);功能槽 a/b 不限,可放任意 function 卡。phase=實際觸發階段。押天氣卡帶 conditionType/Value,實際環境不符就啞。",
+  "cards": [
+    { "id": "start_dash",   "name": "起跑加速", "slot": "start",  "phase": "start",  "speedBonus": 2.0, "durationSeconds": 2.0, "hpCost": 8 },
+    { "id": "power_start",  "name": "蹬步起跑", "slot": "start",  "phase": "start",  "speedBonus": 3.0, "durationSeconds": 1.0, "hpCost": 4, "mpCost": 10 },
+
+    { "id": "steady_pace",  "name": "穩健配速", "slot": "accel",  "phase": "whole",  "wholeRace": true, "speedBonus": 0.3 },
+    { "id": "early_surge",  "name": "初期突進", "slot": "accel",  "phase": "early",  "speedBonus": 1.2, "durationSeconds": 2.5, "hpCost": 10 },
+
+    { "id": "mid_boost",    "name": "中段加速", "slot": "mid",    "phase": "mid",    "speedBonus": 1.5, "durationSeconds": 3.0, "hpCost": 12 },
+    { "id": "mid_burst",    "name": "中段爆發", "slot": "mid",    "phase": "mid",    "speedBonus": 1.8, "durationSeconds": 2.0, "hpCost": 16 },
+
+    { "id": "final_sprint", "name": "最後衝刺", "slot": "sprint", "phase": "sprint", "speedBonus": 2.5, "durationSeconds": 2.5, "hpCost": 20, "mpCost": 10 },
+    { "id": "late_kick",    "name": "末段加速", "slot": "sprint", "phase": "sprint", "speedBonus": 1.5, "durationSeconds": 2.0, "hpCost": 10 },
+
+    { "id": "conserve",     "name": "保留體力", "slot": "function", "phase": "early",  "drainMultiplier": 0.4, "durationSeconds": 6.0, "mpCost": 5 },
+    { "id": "nut_supply",   "name": "堅果補給", "slot": "function", "phase": "mid",    "hpRecover": 25, "mpRecover": 15 },
+    { "id": "rain_run",     "name": "雨天適應", "slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "mpCost": 4, "conditionType": "weather", "conditionValue": "rain" },
+    { "id": "sunny_step",   "name": "晴天步伐", "slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "hpCost": 4, "conditionType": "weather", "conditionValue": "sunny" },
+    { "id": "grass_adapt",  "name": "草地適應", "slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 0.8, "conditionType": "terrain", "conditionValue": "grass" },
+    { "id": "stadium_adapt","name": "運動場適應","slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 0.8, "conditionType": "terrain", "conditionValue": "track" },
+    { "id": "asphalt_dash", "name": "柏油衝刺", "slot": "function", "phase": "sprint", "speedBonus": 1.8, "hpCost": 16, "durationSeconds": 3.0, "conditionType": "terrain", "conditionValue": "asphalt" },
+    { "id": "tailwind_use", "name": "順風利用", "slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 1.0, "conditionType": "wind", "conditionValue": "tail" },
+    { "id": "headwind_use", "name": "逆風高飛", "slot": "function", "phase": "whole", "wholeRace": true, "speedBonus": 0.9, "mpCost": 8, "conditionType": "wind", "conditionValue": "head" }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "_comment": "實驗組:只有黑糖的牌組改成『保守配置』(保留體力+堅果補給,拿掉起跑加速+初期突進),其餘三隻與 hamsters.json 完全相同。對照『同鼠同場只換牌』名次會不會翻。",
+  "hamsters": [
+    {
+      "id": "puff", "name": "泡芙", "baseSpeed": 5.0, "speedJitter": 0.35,
+      "maxHp": 100, "maxMp": 100, "staminaFactor": 1.0,
+      "deck": ["start_dash", "steady_pace", "conserve", "mid_boost", "nut_supply", "final_sprint"]
+    },
+    {
+      "id": "mochi", "name": "麻糬", "baseSpeed": 4.7, "speedJitter": 0.75,
+      "maxHp": 120, "maxMp": 80, "staminaFactor": 1.0,
+      "deck": ["start_dash", "steady_pace", "early_surge", "mid_boost", "nut_supply", "final_sprint"]
+    },
+    {
+      "id": "brownie", "name": "黑糖", "baseSpeed": 5.15, "speedJitter": 0.2,
+      "maxHp": 90, "maxMp": 90, "staminaFactor": 1.15,
+      "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"]
+    },
+    {
+      "id": "peanut", "name": "花生", "baseSpeed": 4.9, "speedJitter": 0.5,
+      "maxHp": 110, "maxMp": 110, "staminaFactor": 0.9,
+      "deck": ["steady_pace", "conserve", "mid_boost", "nut_supply", "late_kick", "final_sprint"]
+    }
+  ]
+}

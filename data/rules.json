@@ -1,0 +1,11 @@
+{
+  "_comment": "平衡參數(規格 §18-14 所有數值可由 JSON 調)。改這裡再跑 batch 就能看平衡變化,不用改程式。",
+  "resourceFloor": 0.72,
+  "hpDrainPer10m": 3.5,
+  "mpDrainPer10m": 3.5,
+  "fatigueStartMult": 0.6,
+  "fatigueEndMult": 1.4,
+  "startPhaseEnd": 0.15,
+  "earlyPhaseEnd": 0.40,
+  "midPhaseEnd": 0.70
+}
