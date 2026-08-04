@@ -313,25 +313,32 @@
 
     async Task PlayAsync()
     {
-        var rp = _result!.Replay!;
-        var events = _result.Events;
-        int evIdx = 0;
-        int stepMs = Math.Clamp(7000 / Math.Max(1, rp.Frames.Count), 12, 60);
-        for (_frame = 0; _frame < rp.Frames.Count; _frame++)
+        try
         {
-            double t = rp.Frames[_frame].T;
-            while (evIdx < events.Count && events[evIdx].TimeSeconds <= t)
+            var rp = _result!.Replay!;
+            var events = _result.Events;
+            int evIdx = 0;
+            int stepMs = Math.Clamp(7000 / Math.Max(1, rp.Frames.Count), 12, 60);
+            for (_frame = 0; _frame < rp.Frames.Count; _frame++)
             {
-                if (events[evIdx].HamsterId != "-") _currentEvent = events[evIdx].Message;
-                evIdx++;
+                double t = rp.Frames[_frame].T;
+                while (evIdx < events.Count && events[evIdx].TimeSeconds <= t)
+                {
+                    if (events[evIdx].HamsterId != "-") _currentEvent = events[evIdx].Message;
+                    evIdx++;
+                }
+                await InvokeAsync(StateHasChanged);
+                await Task.Delay(stepMs);
             }
-            StateHasChanged();
-            await Task.Delay(stepMs);
         }
-        _frame = rp.Frames.Count - 1;
-        _phase = Phase.Result;
-        _currentEvent = "衝線！";
-        StateHasChanged();
+        catch { /* 動畫中的例外不致命,直接收在結果 */ }
+        finally
+        {
+            _frame = Math.Max(0, (_result?.Replay?.Frames.Count ?? 1) - 1);
+            _phase = Phase.Result;
+            _currentEvent = "衝線！";
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     double LanePct(int i)
