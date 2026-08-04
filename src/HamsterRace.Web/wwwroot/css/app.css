@@ -179,3 +179,20 @@ body {
 
 /* 隱藏 Blazor 內部無害 transient banner(真錯誤由 ErrorBoundary 接) */
 #blazor-error-ui { display: none !important; }
+
+/* ---- Stage-2: 資源列 / 獎勵 / 重置 ---- */
+.resbar {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  background: var(--panel); border: 1px solid #3a2e56; border-radius: 12px;
+  padding: 8px 12px; margin-bottom: 14px; font-weight: 700; font-size: .9rem;
+}
+.resbar small { color: var(--muted); font-weight: 400; font-size: .72rem; }
+.resbar .energy { color: var(--accent2); }
+.reward {
+  text-align: center; margin: 10px 0; padding: 10px; border-radius: 10px;
+  background: #2c2545; border: 1px solid var(--accent); color: var(--accent); font-weight: 700; font-size: .95rem;
+}
+.reset-btn {
+  display: block; margin: 10px auto 0; background: transparent; border: 1px solid #4a3c68;
+  color: var(--muted); font-size: .7rem; padding: 4px 10px; border-radius: 8px; cursor: pointer;
+}

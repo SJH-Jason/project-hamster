@@ -1,12 +1,23 @@
 @page "/"
 @using HamsterRace.Domain
 @inject GameData Game
+@inject SaveService Saves
 
 <div class="wrap">
     <header class="hd">
         <h1>🐹 鼠鼠競賽</h1>
         <span class="sub">Project Hamster · 教練模式</span>
     </header>
+
+    @if (Game.Loaded)
+    {
+        <div class="resbar">
+            <span title="種子幣">🪙 @_save.SeedCoins</span>
+            <span title="訓練點">⭐ @_save.TrainingPoints</span>
+            <span title="訓練等級">📈 Lv@_save.TrainingLevel <small>@_save.TrainingExp/@_save.ExpToNext</small></span>
+            <span class="energy" title="體力">⚡ @_save.Energy/@_save.EnergyMax</span>
+        </div>
+    }
 
     <ErrorBoundary @ref="_eb">
     <ChildContent>
@@ -152,6 +163,10 @@
                         }
                     </ol>
                     <div class="myline">@MyResultLine()</div>
+                    @if (_lastReward is { } rw)
+                    {
+                        <div class="reward">🎁 獲得 🪙@rw.coins ＋ ⭐@rw.tp（訓練經驗 +@rw.exp）@(rw.levelUps > 0 ? $"　🎉 訓練等級 +{rw.levelUps}！體力上限提升" : "")</div>
+                    }
                     <div class="again">
                         <button class="start" @onclick="ReplayRace">▶️ 重播這場</button>
                         <button class="start" @onclick="StartRace">🔁 同設定·再抽天氣</button>
@@ -180,7 +195,10 @@
     </ErrorContent>
     </ErrorBoundary>
 
-    <footer class="ft">聆音 × 卡凡 · 確定性引擎 C#/.NET</footer>
+    <footer class="ft">
+        聆音 × 卡凡 · 確定性引擎 C#/.NET
+        <button class="reset-btn" @onclick="ResetSave">🔄 重置存檔(測試)</button>
+    </footer>
 </div>
 
 @code {
@@ -221,11 +239,26 @@
     double CurrentTime => _result?.Replay is { Frames.Count: > 0 } rp
         ? rp.Frames[Math.Min(_frame, rp.Frames.Count - 1)].T : 0;
 
+    PlayerSave _save = new();
+    (int coins, int tp, int exp, int levelUps)? _lastReward;
+
     protected override async Task OnInitializedAsync()
     {
         await Game.EnsureLoadedAsync();
         _trackId = Game.Races.Count > 0 ? Game.Races[0].Id : "grass";
         SelectHamster(0);
+        _save = await Saves.LoadAsync() ?? PlayerSave.NewGame(Game.Hamsters.Select(h => h.Id), DateTime.UtcNow);
+        _save.RefreshEnergy(DateTime.UtcNow);
+        await Saves.SaveAsync(_save);
+    }
+
+    async Task ResetSave()
+    {
+        await Saves.ClearAsync();
+        _save = PlayerSave.NewGame(Game.Hamsters.Select(h => h.Id), DateTime.UtcNow);
+        await Saves.SaveAsync(_save);
+        _phase = Phase.Config;
+        _lastReward = null;
     }
 
     RaceEnvironment TrackEnv()
@@ -303,9 +336,20 @@
     async Task StartRace()
     {
         _error = "";
+        _lastReward = null;
         var deck = Deck();
         if (deck.Count == 0) return;
         if (string.IsNullOrEmpty(_skillId)) _skillId = Game.Hamsters[_meIndex].Skills.FirstOrDefault() ?? "";
+
+        // 體力 gate：比賽消耗體力
+        if (!_save.TrySpendEnergy(PlayerSave.RaceEnergyCost, DateTime.UtcNow))
+        {
+            _error = $"體力不足（{_save.Energy}/{_save.EnergyMax}）——等體力回復再比賽 ⚡";
+            StateHasChanged();
+            return;
+        }
+        await Saves.SaveAsync(_save);
+
         try
         {
             ulong seed = unchecked((ulong)(Random.Shared.NextInt64() ^ DateTime.Now.Ticks));
@@ -322,6 +366,15 @@
         _currentEvent = "比賽開始！";
         StateHasChanged();
         await PlayAsync();
+
+        // 比賽結束 → 依名次發資源（重播不發,只有真比賽發）
+        if (_result is not null)
+        {
+            var myRank = _result.Rankings.First(r => r.HamsterId == Game.Hamsters[_meIndex].Id).Rank;
+            _lastReward = _save.AddRaceReward(myRank);
+            await Saves.SaveAsync(_save);
+            StateHasChanged();
+        }
     }
 
     bool _playing;
